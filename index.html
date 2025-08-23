@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Altitude Feedback System</title>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -261,6 +260,16 @@
             display: none !important;
         }
 
+        .sms-info {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-size: 0.875rem;
+            color: #0c4a6e;
+        }
+
         @media (max-width: 640px) {
             .grid-2 {
                 grid-template-columns: 1fr;
@@ -297,9 +306,6 @@
     </div>
 
     <script>
-        // Initialize EmailJS
-        emailjs.init('Ht_VQzXXhqCGXPeCS');
-
         const locations = {
             'appleton': 'Altitude Appleton',
             'gastonia': 'Altitude Gastonia', 
@@ -441,6 +447,10 @@
                         📤 Submit Feedback
                     </button>
 
+                    <div class="sms-info">
+                        📱 <strong>Instant Alerts:</strong> Our team will be notified immediately when you submit your feedback.
+                    </div>
+
                     <div class="footer-text">
                         <p>Your feedback helps us improve. Thank you for choosing Altitude!</p>
                     </div>
@@ -551,14 +561,14 @@
             submitBtn.disabled = true;
 
             try {
-                // Send main feedback email
-                await sendFeedbackEmail();
+                // Store locally as backup
+                storeLocalBackup();
+                
+                // Submit to Formspree
+                await submitToFormspree();
                 
                 // Send SMS notifications
                 await sendSMSNotifications();
-                
-                // Store locally as backup
-                storeLocalBackup();
                 
                 renderSuccessPage();
                 
@@ -572,49 +582,95 @@
             }
         }
 
-        async function sendFeedbackEmail() {
-            const templateParams = {
-                location_name: locations[currentLocation],
-                feedback_type: feedbackTypeMapping[feedback.type],
-                rating: feedback.rating || 'Not rated',
-                park_area: feedback.area,
-                customer_name: feedback.name || 'Not provided',
-                customer_email: feedback.email || 'Not provided',
-                customer_phone: feedback.phone || 'Not provided',
-                visit_date: feedback.visitDate || 'Not specified',
-                customer_message: feedback.message,
-                submission_time: new Date().toLocaleString()
-            };
+        async function submitToFormspree() {
+            const formData = new FormData();
+            
+            // Create organized message for email
+            const organizedMessage = `
+FEEDBACK SUBMISSION - ${locations[currentLocation]}
 
-            await emailjs.send('service_le4z59o', 'template_52u0kpv', templateParams);
+Feedback Type: ${feedbackTypeMapping[feedback.type]}
+Overall Rating: ${feedback.rating || 'Not rated'}/5 stars
+Park Area: ${feedback.area}
+Visit Date: ${feedback.visitDate || 'Not specified'}
+
+Customer Information:
+Name: ${feedback.name || 'Not provided'}
+Email: ${feedback.email || 'Not provided'}
+Phone: ${feedback.phone || 'Not provided'}
+
+Customer Message:
+${feedback.message}
+
+Submitted: ${new Date().toLocaleString()}
+Location: ${locations[currentLocation]}
+            `.trim();
+
+            // Add form data
+            formData.append('location', locations[currentLocation]);
+            formData.append('feedback_type', feedbackTypeMapping[feedback.type]);
+            formData.append('rating', feedback.rating || 'Not rated');
+            formData.append('park_area', feedback.area);
+            formData.append('customer_name', feedback.name || 'Not provided');
+            formData.append('customer_email', feedback.email || 'Not provided');
+            formData.append('customer_phone', feedback.phone || 'Not provided');
+            formData.append('visit_date', feedback.visitDate || 'Not specified');
+            formData.append('message', feedback.message);
+            formData.append('organized_feedback', organizedMessage);
+            formData.append('submission_time', new Date().toLocaleString());
+
+            const response = await fetch('https://formspree.io/f/mrbazzjn', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to submit feedback');
+            }
+
+            return response.json();
         }
 
         async function sendSMSNotifications() {
-            // Create SMS-friendly message
+            // Create SMS message
             const smsMessage = `🏀 NEW FEEDBACK - ${locations[currentLocation]}
 Type: ${feedbackTypeMapping[feedback.type]}
 Rating: ${feedback.rating || 'Not rated'}/5 stars
 Area: ${feedback.area}
 From: ${feedback.name || 'Anonymous'}
-Message: ${feedback.message.substring(0, 100)}${feedback.message.length > 100 ? '...' : ''}`;
+Message: ${feedback.message.substring(0, 120)}${feedback.message.length > 120 ? '...' : ''}`;
 
-            // SMS template parameters for Visible phone
-            const smsParams1 = {
-                to_email: '8177293224@vtext.com',
-                message: smsMessage
-            };
+            // Send SMS to both phones via Formspree (separate submissions)
+            const smsData1 = new FormData();
+            smsData1.append('_to', '8177293224@vtext.com');
+            smsData1.append('_subject', '');
+            smsData1.append('message', smsMessage);
 
-            // SMS template parameters for AT&T phone  
-            const smsParams2 = {
-                to_email: '8173713969@txt.att.net',
-                message: smsMessage
-            };
+            const smsData2 = new FormData();
+            smsData2.append('_to', '8173713969@txt.att.net');
+            smsData2.append('_subject', '');
+            smsData2.append('message', smsMessage);
 
-            // Send SMS to both phones
-            await Promise.all([
-                emailjs.send('service_le4z59o', 'template_52u0kpv', smsParams1),
-                emailjs.send('service_le4z59o', 'template_52u0kpv', smsParams2)
-            ]);
+            // Try to send SMS (don't fail if this doesn't work)
+            try {
+                await Promise.all([
+                    fetch('https://formspree.io/f/mrbazzjn', {
+                        method: 'POST',
+                        body: smsData1,
+                        headers: { 'Accept': 'application/json' }
+                    }),
+                    fetch('https://formspree.io/f/mrbazzjn', {
+                        method: 'POST',
+                        body: smsData2,
+                        headers: { 'Accept': 'application/json' }
+                    })
+                ]);
+            } catch (smsError) {
+                console.warn('SMS sending failed, but continuing:', smsError);
+            }
         }
 
         function storeLocalBackup() {
