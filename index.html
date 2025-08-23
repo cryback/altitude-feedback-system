@@ -255,18 +255,7 @@
             }
         }
 
-        /* Debug styles */
-        .debug-info {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 0.5rem;
-            border-radius: 0.25rem;
-            font-size: 0.75rem;
-            z-index: 1000;
-        }
+        /* Debug styles - REMOVED */
     </style>
 </head>
 <body>
@@ -288,17 +277,13 @@
         </div>
     </div>
 
-    <!-- Debug info (remove in production) -->
-    <div class="debug-info" id="debug">Ready</div>
+    <!-- Debug info removed for production -->
 
     <script>
-        // Debug logging
+        // Debug logging - DISABLED for production
         function debugLog(message) {
             console.log(message);
-            const debugEl = document.getElementById('debug');
-            if (debugEl) {
-                debugEl.textContent = message;
-            }
+            // Debug display removed
         }
 
         const locations = {
