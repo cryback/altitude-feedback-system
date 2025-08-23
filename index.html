@@ -46,12 +46,7 @@
             align-items: center;
             justify-content: center;
             margin: 0 auto 1rem;
-        }
-
-        .icon {
-            width: 2rem;
-            height: 2rem;
-            color: #3b82f6;
+            font-size: 2rem;
         }
 
         h1 {
@@ -93,10 +88,12 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            user-select: none;
         }
 
         .feedback-option:hover {
             background: #f3f4f6;
+            border-color: #d1d5db;
         }
 
         .feedback-option.selected {
@@ -119,6 +116,11 @@
             border: none;
             background: none;
             font-size: 1.5rem;
+            user-select: none;
+        }
+
+        .star:hover {
+            color: #fbbf24;
         }
 
         .star.active {
@@ -132,6 +134,7 @@
             border-radius: 0.75rem;
             font-size: 0.875rem;
             transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: inherit;
         }
 
         .form-input:focus, .form-select:focus, .form-textarea:focus {
@@ -165,15 +168,23 @@
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
+            font-size: 1rem;
+            font-family: inherit;
         }
 
         .btn-primary:hover:not(:disabled) {
             background: linear-gradient(to right, #2563eb, #7c3aed);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
         }
 
         .btn-primary:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
         }
 
         .location-grid {
@@ -192,6 +203,8 @@
             transition: all 0.2s;
             font-weight: 500;
             color: #1f2937;
+            font-family: inherit;
+            font-size: 1rem;
         }
 
         .location-option:hover {
@@ -241,30 +254,53 @@
                 margin: 0.5rem;
             }
         }
+
+        /* Debug styles */
+        .debug-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
     <div id="app">
         <div class="card">
             <div class="header">
-                <div class="icon-container">
-                    <div class="icon">💬</div>
-                </div>
+                <div class="icon-container">💬</div>
                 <h1>Altitude Feedback</h1>
                 <p class="subtitle">Select your location to get started</p>
             </div>
             <div class="location-grid">
-                <button class="location-option" onclick="selectLocation('appleton')">Altitude Appleton</button>
-                <button class="location-option" onclick="selectLocation('gastonia')">Altitude Gastonia</button>
-                <button class="location-option" onclick="selectLocation('lombard')">Altitude Lombard</button>
-                <button class="location-option" onclick="selectLocation('pueblo')">Altitude Pueblo</button>
-                <button class="location-option" onclick="selectLocation('sanjose')">Altitude San Jose</button>
-                <button class="location-option" onclick="selectLocation('york')">Altitude York</button>
+                <button class="location-option" data-location="appleton">Altitude Appleton</button>
+                <button class="location-option" data-location="gastonia">Altitude Gastonia</button>
+                <button class="location-option" data-location="lombard">Altitude Lombard</button>
+                <button class="location-option" data-location="pueblo">Altitude Pueblo</button>
+                <button class="location-option" data-location="sanjose">Altitude San Jose</button>
+                <button class="location-option" data-location="york">Altitude York</button>
             </div>
         </div>
     </div>
 
+    <!-- Debug info (remove in production) -->
+    <div class="debug-info" id="debug">Ready</div>
+
     <script>
+        // Debug logging
+        function debugLog(message) {
+            console.log(message);
+            const debugEl = document.getElementById('debug');
+            if (debugEl) {
+                debugEl.textContent = message;
+            }
+        }
+
         const locations = {
             'appleton': 'Altitude Appleton',
             'gastonia': 'Altitude Gastonia', 
@@ -302,37 +338,57 @@
         };
 
         function init() {
+            debugLog('Initializing...');
+            
+            // Check URL for location parameter
             const urlParams = new URLSearchParams(window.location.search);
             const loc = urlParams.get('location');
             
             if (loc && locations[loc]) {
                 currentLocation = loc;
+                debugLog(`Location from URL: ${loc}`);
                 renderFeedbackForm();
+            } else {
+                debugLog('Showing location selector');
+                setupLocationButtons();
             }
+        }
+
+        function setupLocationButtons() {
+            const locationButtons = document.querySelectorAll('.location-option');
+            locationButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const location = this.getAttribute('data-location');
+                    debugLog(`Location selected: ${location}`);
+                    selectLocation(location);
+                });
+            });
         }
 
         function selectLocation(location) {
             currentLocation = location;
+            debugLog(`Setting location to: ${location}`);
             renderFeedbackForm();
         }
 
         function renderFeedbackForm() {
-            document.getElementById('app').innerHTML = `
+            debugLog(`Rendering form for: ${currentLocation}`);
+            
+            const app = document.getElementById('app');
+            app.innerHTML = `
                 <div class="card">
                     <div class="header">
-                        <div class="icon-container">
-                            <div class="icon">💬</div>
-                        </div>
+                        <div class="icon-container">💬</div>
                         <h1>Share Your Experience</h1>
                         <p class="subtitle">${locations[currentLocation]}</p>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">What would you like to share? *</label>
-                        <div class="feedback-grid">
+                        <div class="feedback-grid" id="feedback-types">
                             ${feedbackTypes.map(type => `
-                                <div class="feedback-option ${feedback.type === type.id ? 'selected' : ''}" 
-                                     onclick="selectFeedbackType('${type.id}')">
+                                <div class="feedback-option" data-type="${type.id}">
                                     <span style="font-size: 1.25rem;">${type.icon}</span>
                                     <span>${type.label}</span>
                                 </div>
@@ -342,20 +398,19 @@
 
                     <div class="form-group">
                         <label class="form-label">Overall Rating</label>
-                        <div class="star-rating">
+                        <div class="star-rating" id="star-rating">
                             ${[1,2,3,4,5].map(star => `
-                                <button class="star ${star <= feedback.rating ? 'active' : ''}" 
-                                        onclick="setRating(${star})">★</button>
+                                <button class="star" data-rating="${star}">★</button>
                             `).join('')}
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Which area of the park? *</label>
-                        <select class="form-select" onchange="updateField('area', this.value)">
+                        <select class="form-select" id="park-area">
                             <option value="">Select an area...</option>
                             ${parkAreas.map(area => `
-                                <option value="${area}" ${feedback.area === area ? 'selected' : ''}>${area}</option>
+                                <option value="${area}">${area}</option>
                             `).join('')}
                         </select>
                     </div>
@@ -364,31 +419,25 @@
                         <label class="form-label">Your Message *</label>
                         <textarea class="form-textarea" 
                                   placeholder="Please share your experience, suggestion, or concern..." 
-                                  onchange="updateField('message', this.value)">${feedback.message}</textarea>
+                                  id="feedback-message"></textarea>
                     </div>
 
                     <div class="form-group">
                         <h3 style="font-size: 1.125rem; font-weight: 500; color: #374151; margin-bottom: 1rem;">Contact Information (Optional)</h3>
                         <div class="grid-2">
-                            <input type="text" class="form-input" placeholder="Your Name" 
-                                   onchange="updateField('name', this.value)" value="${feedback.name}">
-                            <input type="email" class="form-input" placeholder="Your Email" 
-                                   onchange="updateField('email', this.value)" value="${feedback.email}">
+                            <input type="text" class="form-input" placeholder="Your Name" id="contact-name">
+                            <input type="email" class="form-input" placeholder="Your Email" id="contact-email">
                         </div>
                         <input type="tel" class="form-input" placeholder="Your Phone Number" 
-                               onchange="updateField('phone', this.value)" value="${feedback.phone}" 
-                               style="margin-top: 1rem;">
+                               id="contact-phone" style="margin-top: 1rem;">
                     </div>
 
                     <div class="form-group">
                         <label class="form-label">Visit Date</label>
-                        <input type="date" class="form-input" 
-                               onchange="updateField('visitDate', this.value)" 
-                               value="${feedback.visitDate}">
+                        <input type="date" class="form-input" id="visit-date" value="${feedback.visitDate}">
                     </div>
 
-                    <button class="btn-primary" onclick="submitFeedback()" 
-                            ${!feedback.type || !feedback.message || !feedback.area ? 'disabled' : ''}>
+                    <button class="btn-primary" id="submit-btn" disabled>
                         📤 Submit Feedback
                     </button>
 
@@ -397,23 +446,108 @@
                     </div>
                 </div>
             `;
+
+            setupFormEventListeners();
+            updateSubmitButton();
         }
 
-        function selectFeedbackType(type) {
-            feedback.type = type;
-            renderFeedbackForm();
+        function setupFormEventListeners() {
+            debugLog('Setting up form listeners');
+
+            // Feedback type selection
+            const feedbackOptions = document.querySelectorAll('.feedback-option');
+            feedbackOptions.forEach(option => {
+                option.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const type = this.getAttribute('data-type');
+                    debugLog(`Feedback type selected: ${type}`);
+                    
+                    // Remove selected class from all options
+                    feedbackOptions.forEach(opt => opt.classList.remove('selected'));
+                    // Add selected class to clicked option
+                    this.classList.add('selected');
+                    
+                    feedback.type = type;
+                    updateSubmitButton();
+                });
+            });
+
+            // Star rating
+            const stars = document.querySelectorAll('.star');
+            stars.forEach(star => {
+                star.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const rating = parseInt(this.getAttribute('data-rating'));
+                    debugLog(`Rating selected: ${rating}`);
+                    
+                    feedback.rating = rating;
+                    
+                    // Update star display
+                    stars.forEach((s, index) => {
+                        if (index < rating) {
+                            s.classList.add('active');
+                        } else {
+                            s.classList.remove('active');
+                        }
+                    });
+                    
+                    updateSubmitButton();
+                });
+            });
+
+            // Form inputs
+            const parkAreaSelect = document.getElementById('park-area');
+            const messageTextarea = document.getElementById('feedback-message');
+            const nameInput = document.getElementById('contact-name');
+            const emailInput = document.getElementById('contact-email');
+            const phoneInput = document.getElementById('contact-phone');
+            const dateInput = document.getElementById('visit-date');
+
+            if (parkAreaSelect) {
+                parkAreaSelect.addEventListener('change', function() {
+                    feedback.area = this.value;
+                    debugLog(`Area selected: ${this.value}`);
+                    updateSubmitButton();
+                });
+            }
+
+            if (messageTextarea) {
+                messageTextarea.addEventListener('input', function() {
+                    feedback.message = this.value;
+                    debugLog(`Message updated: ${this.value.length} chars`);
+                    updateSubmitButton();
+                });
+            }
+
+            if (nameInput) nameInput.addEventListener('input', function() { feedback.name = this.value; });
+            if (emailInput) emailInput.addEventListener('input', function() { feedback.email = this.value; });
+            if (phoneInput) phoneInput.addEventListener('input', function() { feedback.phone = this.value; });
+            if (dateInput) dateInput.addEventListener('change', function() { feedback.visitDate = this.value; });
+
+            // Submit button
+            const submitBtn = document.getElementById('submit-btn');
+            if (submitBtn) {
+                submitBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    debugLog('Submit button clicked');
+                    handleSubmit();
+                });
+            }
         }
 
-        function setRating(rating) {
-            feedback.rating = rating;
-            renderFeedbackForm();
+        function updateSubmitButton() {
+            const submitBtn = document.getElementById('submit-btn');
+            if (!submitBtn) return;
+
+            const isValid = feedback.type && feedback.message && feedback.area;
+            submitBtn.disabled = !isValid;
+            
+            debugLog(`Form valid: ${isValid} (type: ${!!feedback.type}, message: ${!!feedback.message}, area: ${!!feedback.area})`);
         }
 
-        function updateField(field, value) {
-            feedback[field] = value;
-        }
-
-        function submitFeedback() {
+        function handleSubmit() {
+            debugLog('Handling submit...');
+            
             if (!feedback.type || !feedback.message || !feedback.area) {
                 alert('Please fill in all required fields.');
                 return;
@@ -425,18 +559,26 @@
                 timestamp: new Date().toISOString()
             };
 
-            console.log('Feedback submitted:', submission);
+            debugLog('Feedback submitted: ' + JSON.stringify(submission));
             
             // Store in localStorage for demo
-            const submissions = JSON.parse(localStorage.getItem('altitudeFeedback') || '[]');
-            submissions.push(submission);
-            localStorage.setItem('altitudeFeedback', JSON.stringify(submissions));
+            try {
+                const submissions = JSON.parse(localStorage.getItem('altitudeFeedback') || '[]');
+                submissions.push(submission);
+                localStorage.setItem('altitudeFeedback', JSON.stringify(submissions));
+                debugLog('Saved to localStorage');
+            } catch (e) {
+                debugLog('localStorage error: ' + e.message);
+            }
 
             renderSuccessPage();
         }
 
         function renderSuccessPage() {
-            document.getElementById('app').innerHTML = `
+            debugLog('Showing success page');
+            
+            const app = document.getElementById('app');
+            app.innerHTML = `
                 <div class="card">
                     <div class="success-container">
                         <div class="success-icon">✅</div>
@@ -444,19 +586,49 @@
                         <p style="color: #6b7280; margin-bottom: 1.5rem;">
                             Your feedback has been received. We appreciate you taking the time to share your experience at ${locations[currentLocation]}.
                         </p>
-                        <div style="font-size: 0.875rem; color: #6b7280;">
+                        <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1.5rem;">
                             We'll respond to urgent matters within 2 hours.
                         </div>
-                        <button class="btn-primary" onclick="location.reload()" style="margin-top: 1.5rem; max-width: 200px;">
+                        <button class="btn-primary" id="submit-another" style="max-width: 200px; margin: 0 auto;">
                             Submit Another
                         </button>
                     </div>
                 </div>
             `;
+
+            // Setup submit another button
+            const submitAnotherBtn = document.getElementById('submit-another');
+            if (submitAnotherBtn) {
+                submitAnotherBtn.addEventListener('click', function() {
+                    // Reset feedback object
+                    feedback = {
+                        type: '',
+                        rating: 0,
+                        message: '',
+                        name: '',
+                        email: '',
+                        phone: '',
+                        visitDate: new Date().toISOString().split('T')[0],
+                        area: ''
+                    };
+                    renderFeedbackForm();
+                });
+            }
         }
 
-        // Initialize on page load
-        window.onload = init;
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+
+        // Global error handler
+        window.addEventListener('error', function(e) {
+            debugLog('Error: ' + e.message);
+        });
+
+        debugLog('Script loaded');
     </script>
 </body>
 </html>
