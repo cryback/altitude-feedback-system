@@ -4,11 +4,459 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Altitude Feedback System</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/umd/lucide.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 2rem;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .icon-container {
+            width: 4rem;
+            height: 4rem;
+            background: #dbeafe;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+        }
+
+        .icon {
+            width: 2rem;
+            height: 2rem;
+            color: #3b82f6;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #6b7280;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.75rem;
+        }
+
+        .feedback-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .feedback-option {
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            background: #f9fafb;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .feedback-option:hover {
+            background: #f3f4f6;
+        }
+
+        .feedback-option.selected {
+            border-color: #3b82f6;
+            background: #dbeafe;
+        }
+
+        .star-rating {
+            display: flex;
+            gap: 0.25rem;
+            margin-top: 0.75rem;
+        }
+
+        .star {
+            width: 2rem;
+            height: 2rem;
+            color: #d1d5db;
+            cursor: pointer;
+            transition: color 0.2s;
+            border: none;
+            background: none;
+            font-size: 1.5rem;
+        }
+
+        .star.active {
+            color: #fbbf24;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(to right, #3b82f6, #8b5cf6);
+            color: white;
+            font-weight: 500;
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(to right, #2563eb, #7c3aed);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .location-grid {
+            display: grid;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .location-option {
+            padding: 1rem;
+            text-align: left;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .location-option:hover {
+            background: #dbeafe;
+            border-color: #3b82f6;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .success-container {
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 5rem;
+            height: 5rem;
+            background: #dcfce7;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2.5rem;
+            color: #16a34a;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 640px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .feedback-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .card {
+                padding: 1.5rem;
+                margin: 0.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div id="app"></div>
-    <script src="script.js"></script>
+    <div id="app">
+        <div class="card">
+            <div class="header">
+                <div class="icon-container">
+                    <div class="icon">💬</div>
+                </div>
+                <h1>Altitude Feedback</h1>
+                <p class="subtitle">Select your location to get started</p>
+            </div>
+            <div class="location-grid">
+                <button class="location-option" onclick="selectLocation('appleton')">Altitude Appleton</button>
+                <button class="location-option" onclick="selectLocation('gastonia')">Altitude Gastonia</button>
+                <button class="location-option" onclick="selectLocation('lombard')">Altitude Lombard</button>
+                <button class="location-option" onclick="selectLocation('pueblo')">Altitude Pueblo</button>
+                <button class="location-option" onclick="selectLocation('sanjose')">Altitude San Jose</button>
+                <button class="location-option" onclick="selectLocation('york')">Altitude York</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const locations = {
+            'appleton': 'Altitude Appleton',
+            'gastonia': 'Altitude Gastonia', 
+            'lombard': 'Altitude Lombard',
+            'pueblo': 'Altitude Pueblo',
+            'sanjose': 'Altitude San Jose',
+            'york': 'Altitude York'
+        };
+
+        const feedbackTypes = [
+            { id: 'complaint', label: 'Complaint', icon: '⚠️' },
+            { id: 'praise', label: 'Praise/Compliment', icon: '👍' },
+            { id: 'suggestion', label: 'Suggestion', icon: '💡' },
+            { id: 'safety', label: 'Safety Concern', icon: '🛡️' },
+            { id: 'staff', label: 'Staff Feedback', icon: '👥' },
+            { id: 'general', label: 'General Feedback', icon: '💬' }
+        ];
+
+        const parkAreas = [
+            'Main Trampoline Area', 'Foam Pit', 'Dodgeball Courts', 'Basketball Hoops',
+            'Kids Area', 'Party Rooms', 'Front Desk/Check-in', 'Restrooms',
+            'Snack Bar', 'Arcade', 'Parking Lot', 'Other'
+        ];
+
+        let currentLocation = '';
+        let feedback = {
+            type: '',
+            rating: 0,
+            message: '',
+            name: '',
+            email: '',
+            phone: '',
+            visitDate: new Date().toISOString().split('T')[0],
+            area: ''
+        };
+
+        function init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const loc = urlParams.get('location');
+            
+            if (loc && locations[loc]) {
+                currentLocation = loc;
+                renderFeedbackForm();
+            }
+        }
+
+        function selectLocation(location) {
+            currentLocation = location;
+            renderFeedbackForm();
+        }
+
+        function renderFeedbackForm() {
+            document.getElementById('app').innerHTML = `
+                <div class="card">
+                    <div class="header">
+                        <div class="icon-container">
+                            <div class="icon">💬</div>
+                        </div>
+                        <h1>Share Your Experience</h1>
+                        <p class="subtitle">${locations[currentLocation]}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">What would you like to share? *</label>
+                        <div class="feedback-grid">
+                            ${feedbackTypes.map(type => `
+                                <div class="feedback-option ${feedback.type === type.id ? 'selected' : ''}" 
+                                     onclick="selectFeedbackType('${type.id}')">
+                                    <span style="font-size: 1.25rem;">${type.icon}</span>
+                                    <span>${type.label}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Overall Rating</label>
+                        <div class="star-rating">
+                            ${[1,2,3,4,5].map(star => `
+                                <button class="star ${star <= feedback.rating ? 'active' : ''}" 
+                                        onclick="setRating(${star})">★</button>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Which area of the park? *</label>
+                        <select class="form-select" onchange="updateField('area', this.value)">
+                            <option value="">Select an area...</option>
+                            ${parkAreas.map(area => `
+                                <option value="${area}" ${feedback.area === area ? 'selected' : ''}>${area}</option>
+                            `).join('')}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Your Message *</label>
+                        <textarea class="form-textarea" 
+                                  placeholder="Please share your experience, suggestion, or concern..." 
+                                  onchange="updateField('message', this.value)">${feedback.message}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <h3 style="font-size: 1.125rem; font-weight: 500; color: #374151; margin-bottom: 1rem;">Contact Information (Optional)</h3>
+                        <div class="grid-2">
+                            <input type="text" class="form-input" placeholder="Your Name" 
+                                   onchange="updateField('name', this.value)" value="${feedback.name}">
+                            <input type="email" class="form-input" placeholder="Your Email" 
+                                   onchange="updateField('email', this.value)" value="${feedback.email}">
+                        </div>
+                        <input type="tel" class="form-input" placeholder="Your Phone Number" 
+                               onchange="updateField('phone', this.value)" value="${feedback.phone}" 
+                               style="margin-top: 1rem;">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Visit Date</label>
+                        <input type="date" class="form-input" 
+                               onchange="updateField('visitDate', this.value)" 
+                               value="${feedback.visitDate}">
+                    </div>
+
+                    <button class="btn-primary" onclick="submitFeedback()" 
+                            ${!feedback.type || !feedback.message || !feedback.area ? 'disabled' : ''}>
+                        📤 Submit Feedback
+                    </button>
+
+                    <div class="footer-text">
+                        <p>Your feedback helps us improve. Thank you for choosing Altitude!</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectFeedbackType(type) {
+            feedback.type = type;
+            renderFeedbackForm();
+        }
+
+        function setRating(rating) {
+            feedback.rating = rating;
+            renderFeedbackForm();
+        }
+
+        function updateField(field, value) {
+            feedback[field] = value;
+        }
+
+        function submitFeedback() {
+            if (!feedback.type || !feedback.message || !feedback.area) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            const submission = {
+                ...feedback,
+                location: currentLocation,
+                timestamp: new Date().toISOString()
+            };
+
+            console.log('Feedback submitted:', submission);
+            
+            // Store in localStorage for demo
+            const submissions = JSON.parse(localStorage.getItem('altitudeFeedback') || '[]');
+            submissions.push(submission);
+            localStorage.setItem('altitudeFeedback', JSON.stringify(submissions));
+
+            renderSuccessPage();
+        }
+
+        function renderSuccessPage() {
+            document.getElementById('app').innerHTML = `
+                <div class="card">
+                    <div class="success-container">
+                        <div class="success-icon">✅</div>
+                        <h1 style="font-size: 1.5rem; margin-bottom: 1rem;">Thank You!</h1>
+                        <p style="color: #6b7280; margin-bottom: 1.5rem;">
+                            Your feedback has been received. We appreciate you taking the time to share your experience at ${locations[currentLocation]}.
+                        </p>
+                        <div style="font-size: 0.875rem; color: #6b7280;">
+                            We'll respond to urgent matters within 2 hours.
+                        </div>
+                        <button class="btn-primary" onclick="location.reload()" style="margin-top: 1.5rem; max-width: 200px;">
+                            Submit Another
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initialize on page load
+        window.onload = init;
+    </script>
 </body>
 </html>
