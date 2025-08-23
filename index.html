@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Altitude Feedback System</title>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -296,6 +297,9 @@
     </div>
 
     <script>
+        // Initialize EmailJS
+        emailjs.init('Ht_VQzXXhqCGXPeCS');
+
         const locations = {
             'appleton': 'Altitude Appleton',
             'gastonia': 'Altitude Gastonia', 
@@ -303,16 +307,6 @@
             'pueblo': 'Altitude Pueblo',
             'sanjose': 'Altitude San Jose',
             'york': 'Altitude York'
-        };
-
-        // Google Forms URLs for each location
-        const formUrls = {
-            'appleton': 'https://docs.google.com/forms/d/e/1FAIpQLScO94QrDABekKMWjM8V89VmfOwZmLoXzvPqr2fri0t_Tq8FGg/formResponse',
-            'gastonia': 'https://docs.google.com/forms/d/e/1FAIpQLSeqA5ku4aB5H9A0E5Ttivvf9aCml04lhIUweoMA8fKzUw-S3A/formResponse',
-            'lombard': 'https://docs.google.com/forms/d/e/1FAIpQLSfAOle-voRVy0_6kTWlfNTQqv1DjOI5DqeFM5t8PmPXa4lnRw/formResponse',
-            'pueblo': 'https://docs.google.com/forms/d/e/1FAIpQLScZXb1bNNvTzKuz2qEJ2K_OYXRdyxcl1qDO-dnyz2pDPRk6rQ/formResponse',
-            'sanjose': 'https://docs.google.com/forms/d/e/1FAIpQLSemYcC8Fg0T-x_18Dp6M2IDbU1ofsNx1TLTtQ_ENoHYDpLkBw/formResponse',
-            'york': 'https://docs.google.com/forms/d/e/1FAIpQLSf7MPqKF5I0ve7mNkL4dJVHU5PEZeduuP14Lad9AxR0-QJDDw/formResponse'
         };
 
         const feedbackTypes = [
@@ -551,12 +545,79 @@
             submitBtn.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
-                    Preparing...
+                    Sending...
                 </div>
             `;
             submitBtn.disabled = true;
 
-            // Store submission data locally as backup
+            try {
+                // Send main feedback email
+                await sendFeedbackEmail();
+                
+                // Send SMS notifications
+                await sendSMSNotifications();
+                
+                // Store locally as backup
+                storeLocalBackup();
+                
+                renderSuccessPage();
+                
+            } catch (error) {
+                console.error('Submission error:', error);
+                alert('There was an error submitting your feedback. Please try again.');
+                
+                // Reset button
+                submitBtn.innerHTML = '📤 Submit Feedback';
+                updateSubmitButton();
+            }
+        }
+
+        async function sendFeedbackEmail() {
+            const templateParams = {
+                location_name: locations[currentLocation],
+                feedback_type: feedbackTypeMapping[feedback.type],
+                rating: feedback.rating || 'Not rated',
+                park_area: feedback.area,
+                customer_name: feedback.name || 'Not provided',
+                customer_email: feedback.email || 'Not provided',
+                customer_phone: feedback.phone || 'Not provided',
+                visit_date: feedback.visitDate || 'Not specified',
+                customer_message: feedback.message,
+                submission_time: new Date().toLocaleString()
+            };
+
+            await emailjs.send('service_le4z59o', 'template_52u0kpv', templateParams);
+        }
+
+        async function sendSMSNotifications() {
+            // Create SMS-friendly message
+            const smsMessage = `🏀 NEW FEEDBACK - ${locations[currentLocation]}
+Type: ${feedbackTypeMapping[feedback.type]}
+Rating: ${feedback.rating || 'Not rated'}/5 stars
+Area: ${feedback.area}
+From: ${feedback.name || 'Anonymous'}
+Message: ${feedback.message.substring(0, 100)}${feedback.message.length > 100 ? '...' : ''}`;
+
+            // SMS template parameters for Visible phone
+            const smsParams1 = {
+                to_email: '8177293224@vtext.com',
+                message: smsMessage
+            };
+
+            // SMS template parameters for AT&T phone  
+            const smsParams2 = {
+                to_email: '8173713969@txt.att.net',
+                message: smsMessage
+            };
+
+            // Send SMS to both phones
+            await Promise.all([
+                emailjs.send('service_le4z59o', 'template_52u0kpv', smsParams1),
+                emailjs.send('service_le4z59o', 'template_52u0kpv', smsParams2)
+            ]);
+        }
+
+        function storeLocalBackup() {
             const submission = {
                 ...feedback,
                 location: currentLocation,
@@ -570,37 +631,23 @@
             } catch (error) {
                 console.error('Local storage error:', error);
             }
-
-            // Show the completion page
-            setTimeout(() => {
-                renderSuccessPage();
-            }, 1000);
         }
 
         function renderSuccessPage() {
             const app = document.getElementById('app');
-            const formUrl = formUrls[currentLocation].replace('/formResponse', '/viewform');
-            
             app.innerHTML = `
                 <div class="card">
                     <div class="success-container">
                         <div class="success-icon">✅</div>
-                        <h1 style="font-size: 1.5rem; margin-bottom: 1rem;">Almost Done!</h1>
+                        <h1 style="font-size: 1.5rem; margin-bottom: 1rem;">Thank You!</h1>
                         <p style="color: #6b7280; margin-bottom: 1.5rem;">
-                            To complete your feedback submission for ${locations[currentLocation]}, please click the button below to finalize your submission.
+                            Your feedback has been successfully submitted for ${locations[currentLocation]}. We appreciate you taking the time to share your experience with us.
                         </p>
-                        <p style="color: #374151; margin-bottom: 1.5rem; font-weight: 500;">
-                            Your feedback details will be pre-filled - just click "Submit" on the next page.
-                        </p>
-                        <a href="${formUrl}?entry.1000000=${encodeURIComponent(feedbackTypeMapping[feedback.type])}&entry.1000001=${feedback.rating}&entry.1000002=${encodeURIComponent(feedback.area)}&entry.1000003=${encodeURIComponent(feedback.message)}&entry.1000004=${encodeURIComponent(feedback.name)}&entry.1000005=${encodeURIComponent(feedback.email)}&entry.1000006=${encodeURIComponent(feedback.phone)}&entry.1000007=${feedback.visitDate}" 
-                           target="_blank" class="btn-primary" style="text-decoration: none; max-width: 300px; margin: 0 auto;">
-                            Complete Feedback Submission
-                        </a>
-                        <div style="font-size: 0.875rem; color: #6b7280; margin-top: 1.5rem;">
+                        <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1.5rem;">
                             We'll respond to urgent matters as soon as possible.
                         </div>
-                        <button class="btn-primary" id="submit-another" style="max-width: 200px; margin: 1rem auto 0; background: #6b7280;">
-                            Submit Another Feedback
+                        <button class="btn-primary" id="submit-another" style="max-width: 200px; margin: 0 auto;">
+                            Submit Another
                         </button>
                     </div>
                 </div>
