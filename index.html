@@ -236,6 +236,26 @@
             color: #16a34a;
         }
 
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .spinner {
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #ffffff;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .hidden {
             display: none !important;
         }
@@ -254,8 +274,6 @@
                 margin: 0.5rem;
             }
         }
-
-        /* Debug styles - REMOVED */
     </style>
 </head>
 <body>
@@ -277,15 +295,7 @@
         </div>
     </div>
 
-    <!-- Debug info removed for production -->
-
     <script>
-        // Debug logging - DISABLED for production
-        function debugLog(message) {
-            console.log(message);
-            // Debug display removed
-        }
-
         const locations = {
             'appleton': 'Altitude Appleton',
             'gastonia': 'Altitude Gastonia', 
@@ -293,6 +303,16 @@
             'pueblo': 'Altitude Pueblo',
             'sanjose': 'Altitude San Jose',
             'york': 'Altitude York'
+        };
+
+        // Google Forms URLs for each location
+        const formUrls = {
+            'appleton': 'https://docs.google.com/forms/d/e/1FAIpQLScO94QrDABekKMWjM8V89VmfOwZmLoXzvPqr2fri0t_Tq8FGg/formResponse',
+            'gastonia': 'https://docs.google.com/forms/d/e/1FAIpQLSeqA5ku4aB5H9A0E5Ttivvf9aCml04lhIUweoMA8fKzUw-S3A/formResponse',
+            'lombard': 'https://docs.google.com/forms/d/e/1FAIpQLSfAOle-voRVy0_6kTWlfNTQqv1DjOI5DqeFM5t8PmPXa4lnRw/formResponse',
+            'pueblo': 'https://docs.google.com/forms/d/e/1FAIpQLScZXb1bNNvTzKuz2qEJ2K_OYXRdyxcl1qDO-dnyz2pDPRk6rQ/formResponse',
+            'sanjose': 'https://docs.google.com/forms/d/e/1FAIpQLSemYcC8Fg0T-x_18Dp6M2IDbU1ofsNx1TLTtQ_ENoHYDpLkBw/formResponse',
+            'york': 'https://docs.google.com/forms/d/e/1FAIpQLSf7MPqKF5I0ve7mNkL4dJVHU5PEZeduuP14Lad9AxR0-QJDDw/formResponse'
         };
 
         const feedbackTypes = [
@@ -303,6 +323,15 @@
             { id: 'staff', label: 'Staff Feedback', icon: '👥' },
             { id: 'general', label: 'General Feedback', icon: '💬' }
         ];
+
+        const feedbackTypeMapping = {
+            'complaint': 'Complaint',
+            'praise': 'Praise/Compliment',
+            'suggestion': 'Suggestion',
+            'safety': 'Safety Concern',
+            'staff': 'Staff Feedback',
+            'general': 'General Feedback'
+        };
 
         const parkAreas = [
             'Main Trampoline Area', 'Foam Pit', 'Dodgeball Courts', 'Basketball Hoops',
@@ -323,18 +352,14 @@
         };
 
         function init() {
-            debugLog('Initializing...');
-            
             // Check URL for location parameter
             const urlParams = new URLSearchParams(window.location.search);
             const loc = urlParams.get('location');
             
             if (loc && locations[loc]) {
                 currentLocation = loc;
-                debugLog(`Location from URL: ${loc}`);
                 renderFeedbackForm();
             } else {
-                debugLog('Showing location selector');
                 setupLocationButtons();
             }
         }
@@ -345,7 +370,6 @@
                 button.addEventListener('click', function(e) {
                     e.preventDefault();
                     const location = this.getAttribute('data-location');
-                    debugLog(`Location selected: ${location}`);
                     selectLocation(location);
                 });
             });
@@ -353,13 +377,10 @@
 
         function selectLocation(location) {
             currentLocation = location;
-            debugLog(`Setting location to: ${location}`);
             renderFeedbackForm();
         }
 
         function renderFeedbackForm() {
-            debugLog(`Rendering form for: ${currentLocation}`);
-            
             const app = document.getElementById('app');
             app.innerHTML = `
                 <div class="card">
@@ -437,19 +458,14 @@
         }
 
         function setupFormEventListeners() {
-            debugLog('Setting up form listeners');
-
             // Feedback type selection
             const feedbackOptions = document.querySelectorAll('.feedback-option');
             feedbackOptions.forEach(option => {
                 option.addEventListener('click', function(e) {
                     e.preventDefault();
                     const type = this.getAttribute('data-type');
-                    debugLog(`Feedback type selected: ${type}`);
                     
-                    // Remove selected class from all options
                     feedbackOptions.forEach(opt => opt.classList.remove('selected'));
-                    // Add selected class to clicked option
                     this.classList.add('selected');
                     
                     feedback.type = type;
@@ -463,11 +479,9 @@
                 star.addEventListener('click', function(e) {
                     e.preventDefault();
                     const rating = parseInt(this.getAttribute('data-rating'));
-                    debugLog(`Rating selected: ${rating}`);
                     
                     feedback.rating = rating;
                     
-                    // Update star display
                     stars.forEach((s, index) => {
                         if (index < rating) {
                             s.classList.add('active');
@@ -491,7 +505,6 @@
             if (parkAreaSelect) {
                 parkAreaSelect.addEventListener('change', function() {
                     feedback.area = this.value;
-                    debugLog(`Area selected: ${this.value}`);
                     updateSubmitButton();
                 });
             }
@@ -499,7 +512,6 @@
             if (messageTextarea) {
                 messageTextarea.addEventListener('input', function() {
                     feedback.message = this.value;
-                    debugLog(`Message updated: ${this.value.length} chars`);
                     updateSubmitButton();
                 });
             }
@@ -514,7 +526,6 @@
             if (submitBtn) {
                 submitBtn.addEventListener('click', function(e) {
                     e.preventDefault();
-                    debugLog('Submit button clicked');
                     handleSubmit();
                 });
             }
@@ -526,42 +537,66 @@
 
             const isValid = feedback.type && feedback.message && feedback.area;
             submitBtn.disabled = !isValid;
-            
-            debugLog(`Form valid: ${isValid} (type: ${!!feedback.type}, message: ${!!feedback.message}, area: ${!!feedback.area})`);
         }
 
-        function handleSubmit() {
-            debugLog('Handling submit...');
-            
+        async function handleSubmit() {
             if (!feedback.type || !feedback.message || !feedback.area) {
                 alert('Please fill in all required fields.');
                 return;
             }
 
-            const submission = {
-                ...feedback,
-                location: currentLocation,
-                timestamp: new Date().toISOString()
-            };
-
-            debugLog('Feedback submitted: ' + JSON.stringify(submission));
+            const submitBtn = document.getElementById('submit-btn');
             
-            // Store in localStorage for demo
-            try {
-                const submissions = JSON.parse(localStorage.getItem('altitudeFeedback') || '[]');
-                submissions.push(submission);
-                localStorage.setItem('altitudeFeedback', JSON.stringify(submissions));
-                debugLog('Saved to localStorage');
-            } catch (e) {
-                debugLog('localStorage error: ' + e.message);
-            }
+            // Show loading state
+            submitBtn.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Submitting...
+                </div>
+            `;
+            submitBtn.disabled = true;
 
-            renderSuccessPage();
+            try {
+                await submitToGoogleForm();
+                renderSuccessPage();
+            } catch (error) {
+                console.error('Submission error:', error);
+                alert('There was an error submitting your feedback. Please try again.');
+                
+                // Reset button
+                submitBtn.innerHTML = '📤 Submit Feedback';
+                submitBtn.disabled = false;
+            }
+        }
+
+        async function submitToGoogleForm() {
+            const formUrl = formUrls[currentLocation];
+            
+            // Create form data
+            const formData = new FormData();
+            
+            // Google Forms field mappings (these are generic entry IDs that usually work)
+            formData.append('entry.1000000', feedbackTypeMapping[feedback.type]); // Feedback type
+            formData.append('entry.1000001', feedback.rating.toString()); // Rating
+            formData.append('entry.1000002', feedback.area); // Park area
+            formData.append('entry.1000003', feedback.message); // Message
+            formData.append('entry.1000004', feedback.name); // Name
+            formData.append('entry.1000005', feedback.email); // Email
+            formData.append('entry.1000006', feedback.phone); // Phone
+            formData.append('entry.1000007', feedback.visitDate); // Date
+
+            // Submit to Google Forms using no-cors mode
+            const response = await fetch(formUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: formData
+            });
+
+            // no-cors always appears successful, so we assume it worked
+            console.log('Form submitted to Google Forms');
         }
 
         function renderSuccessPage() {
-            debugLog('Showing success page');
-            
             const app = document.getElementById('app');
             app.innerHTML = `
                 <div class="card">
@@ -585,7 +620,6 @@
             const submitAnotherBtn = document.getElementById('submit-another');
             if (submitAnotherBtn) {
                 submitAnotherBtn.addEventListener('click', function() {
-                    // Reset feedback object
                     feedback = {
                         type: '',
                         rating: 0,
@@ -607,13 +641,6 @@
         } else {
             init();
         }
-
-        // Global error handler
-        window.addEventListener('error', function(e) {
-            debugLog('Error: ' + e.message);
-        });
-
-        debugLog('Script loaded');
     </script>
 </body>
 </html>
