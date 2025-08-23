@@ -1,0 +1,12 @@
+{
+  "name": "altitude-feedback",
+  "version": "1.0.0",
+  "description": "Feedback system for Altitude Trampoline Parks",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve .",
+    "build": "echo 'Static build complete'"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
