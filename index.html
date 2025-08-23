@@ -551,66 +551,56 @@
             submitBtn.innerHTML = `
                 <div class="loading">
                     <div class="spinner"></div>
-                    Submitting...
+                    Preparing...
                 </div>
             `;
             submitBtn.disabled = true;
 
+            // Store submission data locally as backup
+            const submission = {
+                ...feedback,
+                location: currentLocation,
+                timestamp: new Date().toISOString()
+            };
+
             try {
-                await submitToGoogleForm();
-                renderSuccessPage();
+                const submissions = JSON.parse(localStorage.getItem('altitudeFeedback') || '[]');
+                submissions.push(submission);
+                localStorage.setItem('altitudeFeedback', JSON.stringify(submissions));
             } catch (error) {
-                console.error('Submission error:', error);
-                alert('There was an error submitting your feedback. Please try again.');
-                
-                // Reset button
-                submitBtn.innerHTML = '📤 Submit Feedback';
-                submitBtn.disabled = false;
+                console.error('Local storage error:', error);
             }
-        }
 
-        async function submitToGoogleForm() {
-            const formUrl = formUrls[currentLocation];
-            
-            // Create form data
-            const formData = new FormData();
-            
-            // Google Forms field mappings (these are generic entry IDs that usually work)
-            formData.append('entry.1000000', feedbackTypeMapping[feedback.type]); // Feedback type
-            formData.append('entry.1000001', feedback.rating.toString()); // Rating
-            formData.append('entry.1000002', feedback.area); // Park area
-            formData.append('entry.1000003', feedback.message); // Message
-            formData.append('entry.1000004', feedback.name); // Name
-            formData.append('entry.1000005', feedback.email); // Email
-            formData.append('entry.1000006', feedback.phone); // Phone
-            formData.append('entry.1000007', feedback.visitDate); // Date
-
-            // Submit to Google Forms using no-cors mode
-            const response = await fetch(formUrl, {
-                method: 'POST',
-                mode: 'no-cors',
-                body: formData
-            });
-
-            // no-cors always appears successful, so we assume it worked
-            console.log('Form submitted to Google Forms');
+            // Show the completion page
+            setTimeout(() => {
+                renderSuccessPage();
+            }, 1000);
         }
 
         function renderSuccessPage() {
             const app = document.getElementById('app');
+            const formUrl = formUrls[currentLocation].replace('/formResponse', '/viewform');
+            
             app.innerHTML = `
                 <div class="card">
                     <div class="success-container">
                         <div class="success-icon">✅</div>
-                        <h1 style="font-size: 1.5rem; margin-bottom: 1rem;">Thank You!</h1>
+                        <h1 style="font-size: 1.5rem; margin-bottom: 1rem;">Almost Done!</h1>
                         <p style="color: #6b7280; margin-bottom: 1.5rem;">
-                            Your feedback has been received. We appreciate you taking the time to share your experience at ${locations[currentLocation]}.
+                            To complete your feedback submission for ${locations[currentLocation]}, please click the button below to finalize your submission.
                         </p>
-                        <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1.5rem;">
+                        <p style="color: #374151; margin-bottom: 1.5rem; font-weight: 500;">
+                            Your feedback details will be pre-filled - just click "Submit" on the next page.
+                        </p>
+                        <a href="${formUrl}?entry.1000000=${encodeURIComponent(feedbackTypeMapping[feedback.type])}&entry.1000001=${feedback.rating}&entry.1000002=${encodeURIComponent(feedback.area)}&entry.1000003=${encodeURIComponent(feedback.message)}&entry.1000004=${encodeURIComponent(feedback.name)}&entry.1000005=${encodeURIComponent(feedback.email)}&entry.1000006=${encodeURIComponent(feedback.phone)}&entry.1000007=${feedback.visitDate}" 
+                           target="_blank" class="btn-primary" style="text-decoration: none; max-width: 300px; margin: 0 auto;">
+                            Complete Feedback Submission
+                        </a>
+                        <div style="font-size: 0.875rem; color: #6b7280; margin-top: 1.5rem;">
                             We'll respond to urgent matters as soon as possible.
                         </div>
-                        <button class="btn-primary" id="submit-another" style="max-width: 200px; margin: 0 auto;">
-                            Submit Another
+                        <button class="btn-primary" id="submit-another" style="max-width: 200px; margin: 1rem auto 0; background: #6b7280;">
+                            Submit Another Feedback
                         </button>
                     </div>
                 </div>
