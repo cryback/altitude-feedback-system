@@ -1,605 +1,644 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Altitude Feedback System</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Altitude Feedback System</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #8b5cf6, #06b6d4);
-            padding: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6; color: #333; min-height: 100vh;
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+      padding: 1rem; display: flex; align-items: center; justify-content: center;
+    }
 
-        .card {
-            background: white;
-            border-radius: 1rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            padding: 2rem;
-            width: 100%;
-            max-width: 600px;
-        }
+    .card {
+      background: #fff; border-radius: 1rem;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      padding: 2rem; width: 100%; max-width: 600px;
+    }
 
-        .header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
+    .header { text-align: center; margin-bottom: 2rem; }
+    .icon-container { display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:2rem; }
+    .logo { height:100px; width:auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+    .logo-placeholder {
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4); color:#fff; padding:15px 25px; border-radius:8px;
+      font-weight:700; font-size:1.5rem; letter-spacing:2px; text-shadow:0 2px 4px rgba(0,0,0,0.3);
+    }
 
-        .icon-container {
-            width: auto;
-            height: auto;
-            background: transparent;
-            border-radius: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1rem;
-            font-size: 2rem;
-        }
+    h1 { font-size:1.5rem; font-weight:700; color:#1f2937; margin-bottom:.5rem; }
+    .subtitle { color:#6b7280; font-size:1.1rem; font-weight:600; }
 
-        .logo {
-            height: 100px;
-            width: auto;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-        }
+    .form-group { margin-bottom: 1.5rem; }
+    .form-label { display:block; font-size:.875rem; font-weight:600; color:#374151; margin-bottom:.75rem; }
+    .required-dot::after { content:" *"; color:#ef4444; }
 
-        .logo-placeholder {
-            background: linear-gradient(135deg, #8b5cf6, #06b6d4);
-            color: white;
-            padding: 15px 25px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 1.5rem;
-            letter-spacing: 2px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
+    /* Unified control sizing */
+    .form-input, .form-select, .form-textarea {
+      width:100%; padding:.75rem 1rem;
+      border:1px solid #d1d5db; border-radius:.75rem;
+      font-size:.875rem; font-family:inherit;
+      transition: border-color .2s, box-shadow .2s;
+      min-height:44px; box-sizing:border-box; background:#fff;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline:none; border-color:#8b5cf6; box-shadow:0 0 0 3px rgba(139,92,246,.1);
+    }
+    .form-textarea { resize: vertical; min-height: 120px; }
 
-        h1 {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #1f2937;
-            margin-bottom: 0.5rem;
-        }
+    /* Error states */
+    .invalid { border-color:#dc2626 !important; box-shadow:0 0 0 3px rgba(220,38,38,.1) !important; }
+    .error-text { color:#dc2626; font-size:.8rem; margin-top:.4rem; min-height:1.1em; }
 
-        .subtitle {
-            color: #6b7280;
-            font-size: 1.4rem;
-            font-weight: 700;
-        }
+    /* Counter under textarea */
+    .counter-row {
+      display:flex; justify-content:space-between; align-items:center;
+      font-size: .8rem; margin-top:.4rem; color:#6b7280;
+    }
+    .counter { font-variant-numeric: tabular-nums; }
+    .counter.near-limit { color:#b45309; }      /* amber-700 */
+    .counter.at-limit { color:#dc2626; }        /* red-600 */
 
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
+    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
 
-        .form-label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #374151;
-            margin-bottom: 0.75rem;
-        }
+    /* Date wrapper with flush-right calendar button */
+    .date-wrapper { position: relative; }
+    .date-wrapper .form-input[type="date"] {
+      padding-right: 2.75rem; /* space for calendar button */
+      appearance: auto; -webkit-appearance: auto; -moz-appearance: auto;
+      line-height: normal;
+    }
+    /* Hide native indicator so our button is the visible one */
+    .date-wrapper .form-input[type="date"]::-webkit-calendar-picker-indicator {
+      opacity: 0; pointer-events: none;
+    }
+    .date-button {
+      position:absolute; right:.5rem; top:50%; transform: translateY(-50%);
+      border:0; background:transparent; cursor:pointer; padding:.25rem; border-radius:.5rem;
+    }
+    .date-button:focus-visible { outline: 3px solid rgba(139,92,246,.35); }
+    .date-button svg { width:20px; height:20px; display:block; }
 
-        .feedback-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 0.75rem;
-        }
+    .star-rating { display:flex; gap:.25rem; margin-top:.25rem; }
+    .star {
+      width:2rem; height:2rem; color:#d1d5db; cursor:pointer; transition: color .2s;
+      border:none; background:none; font-size:1.5rem; user-select:none;
+    }
+    .star:hover, .star.active { color:#fbbf24; }
 
-        .feedback-option {
-            padding: 1rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 0.75rem;
-            background: #f9fafb;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            user-select: none;
-        }
+    .btn-primary {
+      width:100%; background: linear-gradient(to right, #8b5cf6, #06b6d4);
+      color:#fff; font-weight:600; padding:1rem 1.5rem;
+      border:none; border-radius:.75rem; cursor:pointer; transition: transform .2s, opacity .2s;
+      display:flex; align-items:center; justify-content:center; gap:.5rem; font-size:1rem;
+    }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity:.5; cursor:not-allowed; }
 
-        .feedback-option:hover {
-            background: #f3f4f6;
-            border-color: #d1d5db;
-        }
+    .inline-row { display:flex; align-items:center; gap:.5rem; }
+    .checkbox { width:18px; height:18px; }
 
-        .feedback-option.selected {
-            border-color: #8b5cf6;
-            background: #f3e8ff;
-        }
+    .location-grid { display:grid; gap:.75rem; margin-bottom:2rem; }
+    .location-option {
+      padding:1rem; text-align:left; background:#f9fafb; border:1px solid #e5e7eb; border-radius:.75rem;
+      cursor:pointer; transition: background .2s, border-color .2s; font-weight:600; color:#1f2937; font-size:1rem;
+    }
+    .location-option:hover { background:#f3e8ff; border-color:#8b5cf6; }
 
-        .star-rating {
-            display: flex;
-            gap: 0.25rem;
-            margin-top: 0.75rem;
-        }
+    .footer-text { text-align:center; margin-top:1.5rem; font-size:.875rem; color:#6b7280; }
+    .success-container { text-align:center; }
+    .success-icon {
+      width:5rem; height:5rem; background:#dcfce7; border-radius:50%;
+      display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem; font-size:2.5rem; color:#16a34a;
+    }
 
-        .star {
-            width: 2rem;
-            height: 2rem;
-            color: #d1d5db;
-            cursor: pointer;
-            transition: color 0.2s;
-            border: none;
-            background: none;
-            font-size: 1.5rem;
-            user-select: none;
-        }
+    .loading { display:flex; align-items:center; gap:.5rem; }
+    .spinner { width:1rem; height:1rem; border:2px solid #fff; border-top:2px solid transparent; border-radius:50%; animation:spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-        .star:hover {
-            color: #fbbf24;
-        }
+    .sms-info {
+      background:#f0f9ff; border:1px solid #06b6d4; border-radius:.5rem;
+      padding:1rem; margin:1rem 0; font-size:.875rem; color:#0c4a6e;
+    }
 
-        .star.active {
-            color: #fbbf24;
-        }
+    /* Honeypot: visually hidden but present in DOM; ignored by AT */
+    .hp-field {
+      position:absolute !important;
+      left:-10000px !important;
+      top:auto !important;
+      width:1px !important;
+      height:1px !important;
+      overflow:hidden !important;
+    }
 
-        .form-input, .form-select, .form-textarea {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.75rem;
-            font-size: 0.875rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            font-family: inherit;
-        }
+    /* Admin panel */
+    .admin {
+      display:none;
+      border:1px dashed #d1d5db;
+      border-radius:.75rem;
+      padding: .75rem;
+      margin-bottom: 1rem;
+      background:#f9fafb;
+      font-size:.9rem;
+    }
+    .admin.show { display:block; }
+    .admin h2 { font-size:1rem; margin-bottom:.5rem; }
+    .admin .row { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
+    .tag { display:inline-block; padding:.15rem .5rem; border-radius:.5rem; background:#eef2ff; color:#4338ca; font-weight:600; }
+    .admin button { padding:.5rem .75rem; border-radius:.5rem; border:1px solid #d1d5db; background:#fff; cursor:pointer; }
+    .admin button:hover { background:#f3f4f6; }
 
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
-            outline: none;
-            border-color: #8b5cf6;
-            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
-        }
-
-        .form-textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .btn-primary {
-            width: 100%;
-            background: linear-gradient(to right, #8b5cf6, #06b6d4);
-            color: white;
-            font-weight: 500;
-            padding: 1rem 1.5rem;
-            border: none;
-            border-radius: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            font-size: 1rem;
-            font-family: inherit;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-            background: linear-gradient(to right, #7c3aed, #0891b2);
-            transform: translateY(-1px);
-        }
-
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .location-grid {
-            display: grid;
-            gap: 0.75rem;
-            margin-bottom: 2rem;
-        }
-
-        .location-option {
-            padding: 1rem;
-            text-align: left;
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 500;
-            color: #1f2937;
-            font-family: inherit;
-            font-size: 1rem;
-        }
-
-        .location-option:hover {
-            background: #f3e8ff;
-            border-color: #8b5cf6;
-        }
-
-        .footer-text {
-            text-align: center;
-            margin-top: 1.5rem;
-            font-size: 0.875rem;
-            color: #6b7280;
-        }
-
-        .success-container {
-            text-align: center;
-        }
-
-        .success-icon {
-            width: 5rem;
-            height: 5rem;
-            background: #dcfce7;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-            font-size: 2.5rem;
-            color: #16a34a;
-        }
-
-        .loading {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .spinner {
-            width: 1rem;
-            height: 1rem;
-            border: 2px solid #ffffff;
-            border-top: 2px solid transparent;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        .sms-info {
-            background: #f0f9ff;
-            border: 1px solid #06b6d4;
-            border-radius: 0.5rem;
-            padding: 1rem;
-            margin: 1rem 0;
-            font-size: 0.875rem;
-            color: #0c4a6e;
-        }
-
-        @media (max-width: 640px) {
-            .grid-2 {
-                grid-template-columns: 1fr;
-            }
-            
-            .feedback-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .card {
-                padding: 1.5rem;
-                margin: 0.5rem;
-            }
-        }
-    </style>
+    @media (max-width: 640px) {
+      .grid-2 { grid-template-columns:1fr; }
+      .card { padding:1.5rem; margin:.5rem; }
+    }
+  </style>
 </head>
 <body>
-    <div id="app">
-        <div class="card">
-            <div class="header">
-                <div class="icon-container">💬</div>
-                <h1>Altitude Feedback</h1>
-                <p class="subtitle">Select your location to get started</p>
-            </div>
-            <div class="location-grid">
-                <button class="location-option" data-location="appleton">Altitude Appleton</button>
-                <button class="location-option" data-location="gastonia">Altitude Gastonia</button>
-                <button class="location-option" data-location="lombard">Altitude Lombard</button>
-                <button class="location-option" data-location="pueblo">Altitude Pueblo</button>
-                <button class="location-option" data-location="sanjose">Altitude San Jose</button>
-                <button class="location-option" data-location="york">Altitude York</button>
-            </div>
+  <div id="app">
+    <div class="card">
+      <div id="admin-panel" class="admin">
+        <h2>Admin</h2>
+        <div class="row" style="margin-bottom:.5rem;">
+          <span class="tag" id="count-legit">Legit: 0</span>
+          <span class="tag" id="count-bot">Bots: 0</span>
         </div>
+        <div class="row">
+          <button id="dl-legit">Download Legit CSV</button>
+          <button id="dl-bots">Download Bots CSV</button>
+          <button id="clear-legit" title="Clear local legit submissions">Clear Legit</button>
+          <button id="clear-bots" title="Clear local bot submissions">Clear Bots</button>
+        </div>
+      </div>
+
+      <div class="header">
+        <div class="icon-container">💬</div>
+        <h1>Altitude Feedback</h1>
+        <p class="subtitle">Select your location to get started</p>
+      </div>
+      <div class="location-grid">
+        <button class="location-option" data-location="appleton">Altitude Appleton</button>
+        <button class="location-option" data-location="gastonia">Altitude Gastonia</button>
+        <button class="location-option" data-location="lombard">Altitude Lombard</button>
+        <button class="location-option" data-location="pueblo">Altitude Pueblo</button>
+        <button class="location-option" data-location="sanjose">Altitude San Jose</button>
+        <button class="location-option" data-location="york">Altitude York</button>
+      </div>
     </div>
+  </div>
 
-    <script>
-        const locations = {
-            'appleton': 'Altitude Appleton',
-            'gastonia': 'Altitude Gastonia', 
-            'lombard': 'Altitude Lombard',
-            'pueblo': 'Altitude Pueblo',
-            'sanjose': 'Altitude San Jose',
-            'york': 'Altitude York'
-        };
+  <script>
+    const MESSAGE_MAX = 1000;
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
+    const LS_KEY_LEGIT = 'altitudeFeedback';
+    const LS_KEY_BOTS = 'altitudeFeedbackBots';
 
-        const feedbackTypes = [
-            { id: 'complaint', label: 'Complaint', icon: '⚠️' },
-            { id: 'praise', label: 'Praise', icon: '👍' },
-            { id: 'suggestion', label: 'Suggestion', icon: '💡' },
-            { id: 'safety', label: 'Safety Concern', icon: '🛡️' },
-            { id: 'staff', label: 'Staff Feedback', icon: '👥' },
-            { id: 'general', label: 'General Feedback', icon: '💬' }
-        ];
+    const locations = {
+      'appleton': 'Altitude Appleton',
+      'gastonia': 'Altitude Gastonia',
+      'lombard': 'Altitude Lombard',
+      'pueblo': 'Altitude Pueblo',
+      'sanjose': 'Altitude San Jose',
+      'york': 'Altitude York'
+    };
 
-        const feedbackTypeMapping = {
-            'complaint': 'Complaint',
-            'praise': 'Praise',
-            'suggestion': 'Suggestion',
-            'safety': 'Safety Concern',
-            'staff': 'Staff Feedback',
-            'general': 'General Feedback'
-        };
+    const feedbackTypes = [
+      { id: 'complaint', label: 'Complaint', icon: '⚠️' },
+      { id: 'praise', label: 'Praise', icon: '👍' },
+      { id: 'suggestion', label: 'Suggestion', icon: '💡' },
+      { id: 'safety', label: 'Safety Concern', icon: '🛡️' },
+      { id: 'staff', label: 'Staff Feedback', icon: '👥' },
+      { id: 'general', label: 'General Feedback', icon: '💬' }
+    ];
 
-        const parkAreas = [
-            'Main Trampoline Area', 'Foam Pit', 'Dodgeball Courts', 'Basketball Hoops',
-            'Kids Area', 'Party Rooms', 'Front Desk/Check-in', 'Restrooms',
-            'Snack Bar', 'Arcade', 'Parking Lot', 'Other'
-        ];
+    const feedbackTypeMapping = {
+      complaint:'Complaint', praise:'Praise', suggestion:'Suggestion',
+      safety:'Safety Concern', staff:'Staff Feedback', general:'General Feedback'
+    };
 
-        let currentLocation = '';
-        let feedback = {
-            type: '',
-            rating: 0,
-            message: '',
-            name: '',
-            email: '',
-            phone: '',
-            visitDate: new Date().toISOString().split('T')[0],
-            area: ''
-        };
+    const parkAreas = [
+      'Main Trampoline Area','Foam Pit','Dodgeball Courts','Basketball Hoops',
+      'Kids Area','Party Rooms','Front Desk/Check-in','Restrooms',
+      'Snack Bar','Arcade','Parking Lot','Other'
+    ];
 
-        function init() {
-            // Check URL for location parameter
-            const urlParams = new URLSearchParams(window.location.search);
-            const loc = urlParams.get('location');
-            
-            if (loc && locations[loc]) {
-                currentLocation = loc;
-                renderFeedbackForm();
-            } else {
-                setupLocationButtons();
-            }
+    let currentLocation = '';
+    let feedback = {
+      type:'', rating:0, message:'', name:'', email:'', phone:'',
+      visitDate: new Date().toISOString().split('T')[0], area:'',
+      ccMe:false
+    };
+
+    function qsAdmin() {
+      const url = new URL(window.location.href);
+      return url.searchParams.get('admin') === '1';
+    }
+
+    function refreshAdminCounts() {
+      const legit = JSON.parse(localStorage.getItem(LS_KEY_LEGIT) || '[]');
+      const bots = JSON.parse(localStorage.getItem(LS_KEY_BOTS) || '[]');
+      document.getElementById('count-legit').textContent = `Legit: ${legit.length}`;
+      document.getElementById('count-bot').textContent = `Bots: ${bots.length}`;
+    }
+
+    function toCSV(arr) {
+      if (!arr || arr.length === 0) return 'data:text/csv;charset=utf-8,';
+      // Normalize keys
+      const allKeys = Array.from(arr.reduce((set, obj) => {
+        Object.keys(obj || {}).forEach(k => set.add(k));
+        return set;
+      }, new Set())).sort();
+      const escape = (v) => {
+        if (v === null || v === undefined) return '';
+        const s = String(v).replace(/\r?\n/g, ' ').replace(/"/g, '""');
+        return `"${s}"`;
+      };
+      const header = allKeys.map(escape).join(',');
+      const rows = arr.map(o => allKeys.map(k => escape(o[k])).join(','));
+      const csv = [header, ...rows].join('\n');
+      return 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    }
+
+    function downloadCSV(items, filename) {
+      const href = toCSV(items);
+      const a = document.createElement('a');
+      a.href = href;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    function initAdminPanel() {
+      const admin = document.getElementById('admin-panel');
+      if (!admin) return;
+      if (qsAdmin()) {
+        admin.classList.add('show');
+        refreshAdminCounts();
+        document.getElementById('dl-legit')?.addEventListener('click', () => {
+          const legit = JSON.parse(localStorage.getItem(LS_KEY_LEGIT) || '[]');
+          downloadCSV(legit, `altitude_legit_${new Date().toISOString().slice(0,10)}.csv`);
+        });
+        document.getElementById('dl-bots')?.addEventListener('click', () => {
+          const bots = JSON.parse(localStorage.getItem(LS_KEY_BOTS) || '[]');
+          downloadCSV(bots, `altitude_bots_${new Date().toISOString().slice(0,10)}.csv`);
+        });
+        document.getElementById('clear-legit')?.addEventListener('click', () => {
+          if (confirm('Clear all locally stored legit submissions?')) {
+            localStorage.removeItem(LS_KEY_LEGIT);
+            refreshAdminCounts();
+          }
+        });
+        document.getElementById('clear-bots')?.addEventListener('click', () => {
+          if (confirm('Clear all locally stored bot submissions?')) {
+            localStorage.removeItem(LS_KEY_BOTS);
+            refreshAdminCounts();
+          }
+        });
+      } else {
+        admin.classList.remove('show');
+      }
+    }
+
+    function init() {
+      initAdminPanel();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const loc = urlParams.get('location');
+      if (loc && locations[loc]) {
+        currentLocation = loc;
+        renderFeedbackForm();
+      } else {
+        setupLocationButtons();
+      }
+    }
+
+    function setupLocationButtons() {
+      document.querySelectorAll('.location-option').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          selectLocation(btn.getAttribute('data-location'));
+        });
+      });
+    }
+
+    function selectLocation(location) {
+      currentLocation = location;
+      renderFeedbackForm();
+    }
+
+    function renderFeedbackForm() {
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="card" id="form-card">
+          <div id="admin-panel" class="admin ${qsAdmin() ? 'show' : ''}">
+            <h2>Admin</h2>
+            <div class="row" style="margin-bottom:.5rem;">
+              <span class="tag" id="count-legit">Legit: 0</span>
+              <span class="tag" id="count-bot">Bots: 0</span>
+            </div>
+            <div class="row">
+              <button id="dl-legit">Download Legit CSV</button>
+              <button id="dl-bots">Download Bots CSV</button>
+              <button id="clear-legit" title="Clear local legit submissions">Clear Legit</button>
+              <button id="clear-bots" title="Clear local bot submissions">Clear Bots</button>
+            </div>
+          </div>
+
+          <div class="header">
+            <div class="icon-container">
+              <img src="https://i.imgur.com/Ug4AxOW.png" alt="Altitude Logo" class="logo"
+                   onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+              <div class="logo-placeholder" style="display:none;">ALTITUDE</div>
+            </div>
+            <h1>Share Your Experience</h1>
+            <p class="subtitle">${locations[currentLocation]}</p>
+          </div>
+
+          <!-- Honeypot (static) -->
+          <div class="hp-field" aria-hidden="true">
+            <label for="hp1">Leave this field empty</label>
+            <input type="text" id="hp1" name="hp1" autocomplete="off" tabindex="-1" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label required-dot" for="feedback-type">What would you like to share?</label>
+            <select class="form-select" id="feedback-type" required>
+              <option value="">Select feedback type...</option>
+              ${feedbackTypes.map(t => `<option value="${t.id}">${t.icon} ${t.label}</option>`).join('')}
+            </select>
+            <p class="error-text" id="err-feedback-type"></p>
+          </div>
+
+          <div class="form-group" aria-labelledby="rating-label">
+            <span id="rating-label" class="form-label">Overall Rating</span>
+            <div class="star-rating" id="star-rating" role="radiogroup" aria-label="Overall rating from 1 to 5">
+              ${[1,2,3,4,5].map(n => `
+                <button class="star" data-rating="${n}" role="radio" aria-checked="false" title="${n} star${n>1?'s':''}">★</button>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label required-dot" for="park-area">Which area of the park?</label>
+            <select class="form-select" id="park-area" required>
+              <option value="">Select an area...</option>
+              ${parkAreas.map(a => `<option value="${a}">${a}</option>`).join('')}
+            </select>
+            <p class="error-text" id="err-park-area"></p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label required-dot" for="feedback-message">Your Message</label>
+            <textarea class="form-textarea" id="feedback-message" placeholder="Please share your experience, suggestion, or concern..." maxlength="${MESSAGE_MAX}" required></textarea>
+            <div class="counter-row">
+              <span>Be as specific as you like (no personal info).</span>
+              <span class="counter" id="message-counter">0/${MESSAGE_MAX}</span>
+            </div>
+            <p class="error-text" id="err-message"></p>
+          </div>
+
+          <div class="form-group">
+            <h3 style="font-size:1.125rem; font-weight:600; color:#374151; margin-bottom:1rem;">Contact Information (Optional)</h3>
+            <div class="grid-2">
+              <input type="text" class="form-input" placeholder="Your Name" id="contact-name" autocomplete="name">
+              <div>
+                <input type="email" class="form-input" placeholder="Your Email" id="contact-email" autocomplete="email">
+                <p class="error-text" id="err-email"></p>
+              </div>
+            </div>
+            <div class="inline-row" style="margin-top:.5rem;">
+              <input type="checkbox" id="cc-me" class="checkbox" />
+              <label for="cc-me">Email me a copy of my submission</label>
+            </div>
+            <input type="tel" class="form-input" placeholder="Your Phone Number" id="contact-phone" inputmode="tel" style="margin-top:1rem;">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="visit-date">Visit Date</label>
+            <div class="date-wrapper">
+              <input type="date" class="form-input" id="visit-date" value="${feedback.visitDate}" aria-label="Visit date">
+              <button class="date-button" type="button" id="open-date" aria-label="Open calendar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke-width="1.5"></rect>
+                  <line x1="16" y1="2.5" x2="16" y2="6" stroke-width="1.5"></line>
+                  <line x1="8" y1="2.5" x2="8" y2="6" stroke-width="1.5"></line>
+                  <line x1="3" y1="10" x2="21" y2="10" stroke-width="1.5"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button class="btn-primary" id="submit-btn" disabled>📤 Submit Feedback</button>
+
+          <div class="sms-info">
+            📧 <strong>Direct Notification:</strong> Our management team will be notified immediately when you submit your feedback.
+          </div>
+
+          <div class="footer-text">
+            <p>Your feedback helps us improve. Thank you for choosing Altitude!</p>
+          </div>
+        </div>
+      `;
+
+      setupFormEventListeners();
+      updateSubmitButton();
+      document.querySelector('.card').focus?.();
+
+      // Reinstate admin listeners after re-render
+      initAdminPanel();
+
+      // Honeypot (dynamic) injected after render
+      const hp2 = document.createElement('input');
+      hp2.type = 'text';
+      hp2.id = 'hp2';
+      hp2.name = 'hp2';
+      hp2.autocomplete = 'off';
+      hp2.tabIndex = -1;
+      hp2.className = 'hp-field';
+      document.getElementById('form-card')?.appendChild(hp2);
+    }
+
+    function setupFormEventListeners() {
+      const feedbackSelect = document.getElementById('feedback-type');
+      const parkAreaSelect = document.getElementById('park-area');
+      const messageTextarea = document.getElementById('feedback-message');
+      const nameInput = document.getElementById('contact-name');
+      const emailInput = document.getElementById('contact-email');
+      const phoneInput = document.getElementById('contact-phone');
+      const ccMeInput = document.getElementById('cc-me');
+      const dateInput = document.getElementById('visit-date');
+      const openDateBtn = document.getElementById('open-date');
+      const counter = document.getElementById('message-counter');
+
+      const errors = {
+        type: document.getElementById('err-feedback-type'),
+        area: document.getElementById('err-park-area'),
+        message: document.getElementById('err-message'),
+        email: document.getElementById('err-email')
+      };
+
+      const setInvalid = (el, elErr, msg) => { el?.classList.add('invalid'); if (elErr) elErr.textContent = msg || ''; };
+      const clearInvalid = (el, elErr) => { el?.classList.remove('invalid'); if (elErr) elErr.textContent = ''; };
+
+      const validateType = () => { if (!feedback.type) { setInvalid(feedbackSelect, errors.type, 'Please choose a feedback type.'); return false; } clearInvalid(feedbackSelect, errors.type); return true; };
+      const validateArea = () => { if (!feedback.area) { setInvalid(parkAreaSelect, errors.area, 'Please select a park area.'); return false; } clearInvalid(parkAreaSelect, errors.area); return true; };
+      const validateMessage = () => { if (!feedback.message) { setInvalid(messageTextarea, errors.message, 'Please enter your message.'); return false; } clearInvalid(messageTextarea, errors.message); return true; };
+      const validateEmailIfNeeded = () => {
+        const needs = feedback.ccMe || emailInput.value.trim().length > 0;
+        if (!needs) { clearInvalid(emailInput, errors.email); return true; }
+        if (!EMAIL_REGEX.test(emailInput.value.trim())) { setInvalid(emailInput, errors.email, 'Please enter a valid email address.'); return false; }
+        clearInvalid(emailInput, errors.email); return true;
+      };
+
+      // Selections
+      feedbackSelect?.addEventListener('change', function(){ feedback.type = this.value; validateType(); updateSubmitButton(); });
+      feedbackSelect?.addEventListener('blur', validateType);
+
+      // Star rating (mouse + keyboard)
+      const starGroup = document.getElementById('star-rating');
+      const stars = starGroup?.querySelectorAll('.star') ?? [];
+      stars.forEach(btn => {
+        btn.addEventListener('click', (e) => { e.preventDefault(); setRating(parseInt(btn.dataset.rating, 10)); });
+        btn.addEventListener('keydown', (e) => {
+          const key = e.key;
+          if (key === 'ArrowRight' || key === 'ArrowUp') { e.preventDefault(); setRating(Math.min(5, (feedback.rating || 0) + 1)); btn.blur(); }
+          else if (key === 'ArrowLeft' || key === 'ArrowDown') { e.preventDefault(); setRating(Math.max(1, (feedback.rating || 1) - 1)); btn.blur(); }
+          else if (key === ' ' || key === 'Enter') { e.preventDefault(); setRating(parseInt(btn.dataset.rating, 10)); }
+        });
+      });
+
+      // Park area
+      parkAreaSelect?.addEventListener('change', function(){ feedback.area = this.value; validateArea(); updateSubmitButton(); });
+      parkAreaSelect?.addEventListener('blur', validateArea);
+
+      // Message counter
+      const updateCounter = () => {
+        if (messageTextarea.value.length > MESSAGE_MAX) messageTextarea.value = messageTextarea.value.slice(0, MESSAGE_MAX);
+        const len = messageTextarea.value.length;
+        feedback.message = messageTextarea.value.trim();
+        counter.textContent = `${len}/${MESSAGE_MAX}`;
+        counter.classList.toggle('near-limit', len >= MESSAGE_MAX * 0.85 && len < MESSAGE_MAX);
+        counter.classList.toggle('at-limit', len >= MESSAGE_MAX);
+        validateMessage();
+        updateSubmitButton();
+      };
+      messageTextarea?.addEventListener('input', updateCounter);
+      messageTextarea?.addEventListener('paste', () => setTimeout(updateCounter, 0));
+      messageTextarea?.addEventListener('blur', validateMessage);
+      updateCounter();
+
+      // Optional fields
+      nameInput?.addEventListener('input', function(){ feedback.name = this.value; });
+      emailInput?.addEventListener('input', function(){ feedback.email = this.value.trim(); validateEmailIfNeeded(); });
+      phoneInput?.addEventListener('input', function(){ feedback.phone = this.value; });
+
+      // CC me
+      ccMeInput?.addEventListener('change', function(){
+        feedback.ccMe = this.checked;
+        validateEmailIfNeeded();
+        updateSubmitButton();
+      });
+
+      // Date
+      dateInput?.addEventListener('change', function(){ feedback.visitDate = this.value; });
+      openDateBtn?.addEventListener('click', () => { if (dateInput?.showPicker) dateInput.showPicker(); else dateInput?.focus(); });
+
+      // Submit (with honeypot logging)
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        // Honeypot check — if tripped, save to altitudeFeedbackBots and show success
+        const hp1 = document.getElementById('hp1');
+        const hp2 = document.getElementById('hp2');
+        const botTripped =
+          (hp1 && hp1.value && hp1.value.trim() !== '') ||
+          (hp2 && hp2.value && hp2.value.trim() !== '');
+
+        if (botTripped) {
+          const botSubmission = {
+            ...feedback,
+            location: currentLocation,
+            timestamp: new Date().toISOString(),
+            bot: true
+          };
+          try {
+            const bots = JSON.parse(localStorage.getItem(LS_KEY_BOTS) || '[]');
+            bots.push(botSubmission);
+            localStorage.setItem(LS_KEY_BOTS, JSON.stringify(bots));
+          } catch (err) {
+            console.error('Bot storage error:', err);
+          }
+          // Pretend success (no network call, no normal storage)
+          renderSuccessPage();
+          refreshAdminCounts();
+          return;
         }
 
-        function setupLocationButtons() {
-            const locationButtons = document.querySelectorAll('.location-option');
-            locationButtons.forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const location = this.getAttribute('data-location');
-                    selectLocation(location);
-                });
-            });
+        const ok =
+          validateType() &
+          validateArea() &
+          validateMessage() &
+          validateEmailIfNeeded();
+
+        if (!ok) {
+          // Focus first invalid
+          if (!feedback.type) { feedbackSelect.focus(); feedbackSelect.scrollIntoView({behavior:'smooth', block:'center'}); return; }
+          if (!feedback.area) { parkAreaSelect.focus(); parkAreaSelect.scrollIntoView({behavior:'smooth', block:'center'}); return; }
+          if (!feedback.message) { messageTextarea.focus(); messageTextarea.scrollIntoView({behavior:'smooth', block:'center'}); return; }
+          if (feedback.ccMe && !EMAIL_REGEX.test(emailInput.value.trim())) { emailInput.focus(); emailInput.scrollIntoView({behavior:'smooth', block:'center'}); return; }
+          return;
         }
 
-        function selectLocation(location) {
-            currentLocation = location;
-            renderFeedbackForm();
-        }
+        handleSubmit();
+      });
+    }
 
-        function renderFeedbackForm() {
-            const app = document.getElementById('app');
-            app.innerHTML = `
-                <div class="card">
-                    <div class="header">
-                        <div class="icon-container">
-                            <img src="https://i.imgur.com/Ug4AxOW.png" alt="Altitude Logo" class="logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                            <div class="logo-placeholder" style="display: none;">ALTITUDE</div>
-                        </div>
-                        <h1>Share Your Experience</h1>
-                        <p class="subtitle">${locations[currentLocation]}</p>
-                    </div>
+    function setRating(n) {
+      feedback.rating = n;
+      const stars = document.querySelectorAll('.star');
+      stars.forEach((s, idx) => {
+        const active = idx < n;
+        s.classList.toggle('active', active);
+        s.setAttribute('aria-checked', active && idx === n - 1 ? 'true' : 'false');
+      });
+      updateSubmitButton();
+    }
 
-                    <div class="form-group">
-                        <label class="form-label">What would you like to share? *</label>
-                        <select class="form-select" id="feedback-type">
-                            <option value="">Select feedback type...</option>
-                            ${feedbackTypes.map(type => `
-                                <option value="${type.id}">${type.icon} ${type.label}</option>
-                            `).join('')}
-                        </select>
-                    </div>
+    function updateSubmitButton() {
+      const submitBtn = document.getElementById('submit-btn');
+      if (!submitBtn) return;
+      const emailValidOrNotNeeded = !feedback.ccMe || (feedback.email && EMAIL_REGEX.test(feedback.email));
+      const isValid = Boolean(feedback.type && feedback.message && feedback.area && emailValidOrNotNeeded);
+      submitBtn.disabled = !isValid;
+    }
 
-                    <div class="form-group">
-                        <label class="form-label">Overall Rating</label>
-                        <div class="star-rating" id="star-rating">
-                            ${[1,2,3,4,5].map(star => `
-                                <button class="star" data-rating="${star}">★</button>
-                            `).join('')}
-                        </div>
-                    </div>
+    async function handleSubmit() {
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.innerHTML = `<span class="loading"><span class="spinner"></span>Sending...</span>`;
+      submitBtn.disabled = true;
 
-                    <div class="form-group">
-                        <label class="form-label">Which area of the park? *</label>
-                        <select class="form-select" id="park-area">
-                            <option value="">Select an area...</option>
-                            ${parkAreas.map(area => `
-                                <option value="${area}">${area}</option>
-                            `).join('')}
-                        </select>
-                    </div>
+      try {
+        storeLocalBackup();
+        await submitToFormspree();
+        renderSuccessPage();
+        refreshAdminCounts();
+      } catch (err) {
+        console.error('Submission error:', err);
+        alert('There was an error submitting your feedback. Please try again.');
+        submitBtn.innerHTML = '📤 Submit Feedback';
+        updateSubmitButton();
+      }
+    }
 
-                    <div class="form-group">
-                        <label class="form-label">Your Message *</label>
-                        <textarea class="form-textarea" 
-                                  placeholder="Please share your experience, suggestion, or concern..." 
-                                  id="feedback-message"></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <h3 style="font-size: 1.125rem; font-weight: 500; color: #374151; margin-bottom: 1rem;">Contact Information (Optional)</h3>
-                        <div class="grid-2">
-                            <input type="text" class="form-input" placeholder="Your Name" id="contact-name">
-                            <input type="email" class="form-input" placeholder="Your Email" id="contact-email">
-                        </div>
-                        <input type="tel" class="form-input" placeholder="Your Phone Number" 
-                               id="contact-phone" style="margin-top: 1rem;">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Visit Date</label>
-                        <input type="date" class="form-input" id="visit-date" value="${feedback.visitDate}">
-                    </div>
-
-                    <button class="btn-primary" id="submit-btn" disabled>
-                        📤 Submit Feedback
-                    </button>
-
-                    <div class="sms-info">
-                        📧 <strong>Direct Notification:</strong> Our management team will be notified immediately when you submit your feedback.
-                    </div>
-
-                    <div class="footer-text">
-                        <p>Your feedback helps us improve. Thank you for choosing Altitude!</p>
-                    </div>
-                </div>
-            `;
-
-            setupFormEventListeners();
-            updateSubmitButton();
-        }
-
-        function setupFormEventListeners() {
-            // Feedback type selection (dropdown)
-            const feedbackSelect = document.getElementById('feedback-type');
-            if (feedbackSelect) {
-                feedbackSelect.addEventListener('change', function() {
-                    feedback.type = this.value;
-                    updateSubmitButton();
-                });
-            }
-
-            // Star rating
-            const stars = document.querySelectorAll('.star');
-            stars.forEach(star => {
-                star.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const rating = parseInt(this.getAttribute('data-rating'));
-                    
-                    feedback.rating = rating;
-                    
-                    stars.forEach((s, index) => {
-                        if (index < rating) {
-                            s.classList.add('active');
-                        } else {
-                            s.classList.remove('active');
-                        }
-                    });
-                    
-                    updateSubmitButton();
-                });
-            });
-
-            // Form inputs
-            const parkAreaSelect = document.getElementById('park-area');
-            const messageTextarea = document.getElementById('feedback-message');
-            const nameInput = document.getElementById('contact-name');
-            const emailInput = document.getElementById('contact-email');
-            const phoneInput = document.getElementById('contact-phone');
-            const dateInput = document.getElementById('visit-date');
-
-            if (parkAreaSelect) {
-                parkAreaSelect.addEventListener('change', function() {
-                    feedback.area = this.value;
-                    updateSubmitButton();
-                });
-            }
-
-            if (messageTextarea) {
-                messageTextarea.addEventListener('input', function() {
-                    feedback.message = this.value;
-                    updateSubmitButton();
-                });
-            }
-
-            if (nameInput) nameInput.addEventListener('input', function() { feedback.name = this.value; });
-            if (emailInput) emailInput.addEventListener('input', function() { feedback.email = this.value; });
-            if (phoneInput) phoneInput.addEventListener('input', function() { feedback.phone = this.value; });
-            if (dateInput) dateInput.addEventListener('change', function() { feedback.visitDate = this.value; });
-
-            // Submit button
-            const submitBtn = document.getElementById('submit-btn');
-            if (submitBtn) {
-                submitBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    handleSubmit();
-                });
-            }
-        }
-
-        function updateSubmitButton() {
-            const submitBtn = document.getElementById('submit-btn');
-            if (!submitBtn) return;
-
-            const isValid = feedback.type && feedback.message && feedback.area;
-            submitBtn.disabled = !isValid;
-        }
-
-        async function handleSubmit() {
-            if (!feedback.type || !feedback.message || !feedback.area) {
-                alert('Please fill in all required fields.');
-                return;
-            }
-
-            const submitBtn = document.getElementById('submit-btn');
-            
-            // Show loading state
-            submitBtn.innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    Sending...
-                </div>
-            `;
-            submitBtn.disabled = true;
-
-            try {
-                // Store locally as backup
-                storeLocalBackup();
-                
-                // Submit to Formspree (single email to philip@amgtex.com)
-                await submitToFormspree();
-                
-                renderSuccessPage();
-                
-            } catch (error) {
-                console.error('Submission error:', error);
-                alert('There was an error submitting your feedback. Please try again.');
-                
-                // Reset button
-                submitBtn.innerHTML = '📤 Submit Feedback';
-                updateSubmitButton();
-            }
-        }
-
-        async function submitToFormspree() {
-            const formData = new FormData();
-            
-            // Create well-organized email subject and message
-            const emailSubject = `🏀 NEW FEEDBACK - ${locations[currentLocation]} - ${feedbackTypeMapping[feedback.type]}`;
-            
-            const organizedMessage = `
+    async function submitToFormspree() {
+      const formData = new FormData();
+      const emailSubject = `🏀 NEW FEEDBACK - ${locations[currentLocation]} - ${feedbackTypeMapping[feedback.type]}`;
+      const organizedMessage = `
 FEEDBACK SUBMISSION - ${locations[currentLocation]}
 
 ⭐ Rating: ${feedback.rating || 'Not rated'}/5 stars
@@ -620,102 +659,82 @@ ${feedback.message}
 Time: ${new Date().toLocaleString()}
 Location: ${locations[currentLocation]}
 Form URL: feedback.altitudepark.info?location=${currentLocation}
-            `.trim();
+      `.trim();
 
-            // Add all form data for Formspree
-            formData.append('_replyto', feedback.email || 'noreply@altitudepark.info');
-            formData.append('_subject', emailSubject);
-            formData.append('location', locations[currentLocation]);
-            formData.append('feedback_type', feedbackTypeMapping[feedback.type]);
-            formData.append('rating', feedback.rating || 'Not rated');
-            formData.append('park_area', feedback.area);
-            formData.append('customer_name', feedback.name || 'Not provided');
-            formData.append('customer_email', feedback.email || 'Not provided');
-            formData.append('customer_phone', feedback.phone || 'Not provided');
-            formData.append('visit_date', feedback.visitDate || 'Not specified');
-            formData.append('customer_message', feedback.message);
-            formData.append('organized_feedback', organizedMessage);
-            formData.append('submission_time', new Date().toLocaleString());
-            formData.append('form_url', `feedback.altitudepark.info?location=${currentLocation}`);
+      formData.append('_replyto', feedback.email || 'noreply@altitudepark.info');
+      formData.append('_subject', emailSubject);
+      formData.append('location', locations[currentLocation]);
+      formData.append('feedback_type', feedbackTypeMapping[feedback.type]);
+      formData.append('rating', feedback.rating || 'Not rated');
+      formData.append('park_area', feedback.area);
+      formData.append('customer_name', feedback.name || 'Not provided');
+      formData.append('customer_email', feedback.email || 'Not provided');
+      formData.append('customer_phone', feedback.phone || 'Not provided');
+      formData.append('visit_date', feedback.visitDate || 'Not specified');
+      formData.append('customer_message', feedback.message);
+      formData.append('organized_feedback', organizedMessage);
+      formData.append('submission_time', new Date().toLocaleString());
+      formData.append('form_url', `feedback.altitudepark.info?location=${currentLocation}`);
 
-            const response = await fetch('https://formspree.io/f/mrbazzjn', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
+      // CC fields (for downstream rules)
+      if (feedback.ccMe && feedback.email && EMAIL_REGEX.test(feedback.email)) {
+        formData.append('cc_me', 'yes');
+        formData.append('cc_email', feedback.email);
+      } else {
+        formData.append('cc_me', 'no');
+      }
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Formspree error:', errorData);
-                throw new Error('Failed to submit feedback');
-            }
+      const response = await fetch('https://formspree.io/f/mrbazzjn', {
+        method: 'POST', body: formData, headers: { 'Accept': 'application/json' }
+      });
 
-            return response.json();
-        }
+      if (!response.ok) {
+        let err; try { err = await response.json(); } catch {}
+        console.error('Formspree error:', err || response.statusText);
+        throw new Error('Failed to submit feedback');
+      }
+      return response.json();
+    }
 
-        function storeLocalBackup() {
-            const submission = {
-                ...feedback,
-                location: currentLocation,
-                timestamp: new Date().toISOString()
-            };
+    function storeLocalBackup() {
+      const submission = { ...feedback, location: currentLocation, timestamp: new Date().toISOString() };
+      try {
+        const submissions = JSON.parse(localStorage.getItem(LS_KEY_LEGIT) || '[]');
+        submissions.push(submission);
+        localStorage.setItem(LS_KEY_LEGIT, JSON.stringify(submissions));
+      } catch (e) { console.error('Local storage error:', e); }
+    }
 
-            try {
-                const submissions = JSON.parse(localStorage.getItem('altitudeFeedback') || '[]');
-                submissions.push(submission);
-                localStorage.setItem('altitudeFeedback', JSON.stringify(submissions));
-            } catch (error) {
-                console.error('Local storage error:', error);
-            }
-        }
+    function renderSuccessPage() {
+      const app = document.getElementById('app');
+      app.innerHTML = `
+        <div class="card">
+          <div class="success-container">
+            <div class="success-icon">✅</div>
+            <h1 style="font-size:1.5rem; margin-bottom:1rem;">Thank You!</h1>
+            <p style="color:#6b7280; margin-bottom:1.5rem;">
+              Your feedback has been successfully submitted for ${locations[currentLocation]}. We appreciate you taking the time to share your experience with us.
+            </p>
+            <div style="font-size:.95rem; color:#6b7280; margin-bottom:1.5rem;">
+              We'll respond to urgent matters as soon as possible.
+            </div>
+            <button class="btn-primary" id="submit-another" style="max-width:220px; margin:0 auto;">Submit Another</button>
+          </div>
+        </div>
+      `;
+      const btn = document.getElementById('submit-another');
+      btn?.addEventListener('click', () => {
+        feedback = { type:'', rating:0, message:'', name:'', email:'', phone:'', visitDate: new Date().toISOString().split('T')[0], area:'', ccMe:false };
+        renderFeedbackForm();
+        document.querySelector('#feedback-message')?.focus();
+      });
+      btn?.focus();
+    }
 
-        function renderSuccessPage() {
-            const app = document.getElementById('app');
-            app.innerHTML = `
-                <div class="card">
-                    <div class="success-container">
-                        <div class="success-icon">✅</div>
-                        <h1 style="font-size: 1.5rem; margin-bottom: 1rem;">Thank You!</h1>
-                        <p style="color: #6b7280; margin-bottom: 1.5rem;">
-                            Your feedback has been successfully submitted for ${locations[currentLocation]}. We appreciate you taking the time to share your experience with us.
-                        </p>
-                        <div style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1.5rem;">
-                            We'll respond to urgent matters as soon as possible.
-                        </div>
-                        <button class="btn-primary" id="submit-another" style="max-width: 200px; margin: 0 auto;">
-                            Submit Another
-                        </button>
-                    </div>
-                </div>
-            `;
-
-            // Setup submit another button
-            const submitAnotherBtn = document.getElementById('submit-another');
-            if (submitAnotherBtn) {
-                submitAnotherBtn.addEventListener('click', function() {
-                    feedback = {
-                        type: '',
-                        rating: 0,
-                        message: '',
-                        name: '',
-                        email: '',
-                        phone: '',
-                        visitDate: new Date().toISOString().split('T')[0],
-                        area: ''
-                    };
-                    renderFeedbackForm();
-                });
-            }
-        }
-
-        // Initialize when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
-        } else {
-            init();
-        }
-    </script>
+    // Init
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else { init(); }
+  </script>
 </body>
 </html>
