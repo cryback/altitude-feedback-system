@@ -58,19 +58,34 @@
       font-size: .8rem; margin-top:.4rem; color:#6b7280;
     }
     .counter { font-variant-numeric: tabular-nums; }
-    .counter.near-limit { color:#b45309; }      /* amber-700 */
-    .counter.at-limit { color:#dc2626; }        /* red-600 */
+    .counter.near-limit { color:#b45309; }
+    .counter.at-limit { color:#dc2626; }
 
     .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
 
-    /* Date wrapper with flush-right calendar button */
-    .date-wrapper { position: relative; }
+    /* ---------- DATE WIDTH FIX (iOS/Chrome mobile) ---------- */
+    input[type="date"].form-input {
+      width: 100% !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      font-size: 0.875rem;
+      padding: 0.75rem 1rem;
+      text-align: left;
+    }
+    .date-wrapper {
+      position: relative;
+      display: flex;            /* allows the input to flex-shrink properly */
+      width: 100%;
+    }
     .date-wrapper .form-input[type="date"] {
-      padding-right: 2.75rem; /* space for calendar button */
+      flex: 1 1 auto;
+      min-width: 0;             /* critical so it won’t overflow */
+      max-width: 100%;
+      padding-right: 2.75rem;   /* space for the calendar button */
       appearance: auto; -webkit-appearance: auto; -moz-appearance: auto;
       line-height: normal;
     }
-    /* Hide native indicator so our button is the visible one */
+    /* Hide native calendar icon so our button is the visible one */
     .date-wrapper .form-input[type="date"]::-webkit-calendar-picker-indicator {
       opacity: 0; pointer-events: none;
     }
@@ -80,6 +95,7 @@
     }
     .date-button:focus-visible { outline: 3px solid rgba(139,92,246,.35); }
     .date-button svg { width:20px; height:20px; display:block; }
+    /* -------------------------------------------------------- */
 
     .star-rating { display:flex; gap:.25rem; margin-top:.25rem; }
     .star {
@@ -112,7 +128,7 @@
     .success-container { text-align:center; }
     .success-icon {
       width:5rem; height:5rem; background:#dcfce7; border-radius:50%;
-      display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem; font-size:2.5rem; color:#16a34a;
+      display:flex; align-items:center; justify-content:center; margin:0 auto; margin-bottom:1.5rem; font-size:2.5rem; color:#16a34a;
     }
 
     .loading { display:flex; align-items:center; gap:.5rem; }
@@ -246,7 +262,6 @@
 
     function toCSV(arr) {
       if (!arr || arr.length === 0) return 'data:text/csv;charset=utf-8,';
-      // Normalize keys
       const allKeys = Array.from(arr.reduce((set, obj) => {
         Object.keys(obj || {}).forEach(k => set.add(k));
         return set;
@@ -494,11 +509,9 @@
         clearInvalid(emailInput, errors.email); return true;
       };
 
-      // Selections
       feedbackSelect?.addEventListener('change', function(){ feedback.type = this.value; validateType(); updateSubmitButton(); });
       feedbackSelect?.addEventListener('blur', validateType);
 
-      // Star rating (mouse + keyboard)
       const starGroup = document.getElementById('star-rating');
       const stars = starGroup?.querySelectorAll('.star') ?? [];
       stars.forEach(btn => {
@@ -511,11 +524,9 @@
         });
       });
 
-      // Park area
       parkAreaSelect?.addEventListener('change', function(){ feedback.area = this.value; validateArea(); updateSubmitButton(); });
       parkAreaSelect?.addEventListener('blur', validateArea);
 
-      // Message counter
       const updateCounter = () => {
         if (messageTextarea.value.length > MESSAGE_MAX) messageTextarea.value = messageTextarea.value.slice(0, MESSAGE_MAX);
         const len = messageTextarea.value.length;
@@ -531,23 +542,19 @@
       messageTextarea?.addEventListener('blur', validateMessage);
       updateCounter();
 
-      // Optional fields
       nameInput?.addEventListener('input', function(){ feedback.name = this.value; });
       emailInput?.addEventListener('input', function(){ feedback.email = this.value.trim(); validateEmailIfNeeded(); });
       phoneInput?.addEventListener('input', function(){ feedback.phone = this.value; });
 
-      // CC me
       ccMeInput?.addEventListener('change', function(){
         feedback.ccMe = this.checked;
         validateEmailIfNeeded();
         updateSubmitButton();
       });
 
-      // Date
       dateInput?.addEventListener('change', function(){ feedback.visitDate = this.value; });
       openDateBtn?.addEventListener('click', () => { if (dateInput?.showPicker) dateInput.showPicker(); else dateInput?.focus(); });
 
-      // Submit (with honeypot logging)
       const submitBtn = document.getElementById('submit-btn');
       submitBtn?.addEventListener('click', (e) => {
         e.preventDefault();
@@ -573,7 +580,6 @@
           } catch (err) {
             console.error('Bot storage error:', err);
           }
-          // Pretend success (no network call, no normal storage)
           renderSuccessPage();
           refreshAdminCounts();
           return;
@@ -586,7 +592,6 @@
           validateEmailIfNeeded();
 
         if (!ok) {
-          // Focus first invalid
           if (!feedback.type) { feedbackSelect.focus(); feedbackSelect.scrollIntoView({behavior:'smooth', block:'center'}); return; }
           if (!feedback.area) { parkAreaSelect.focus(); parkAreaSelect.scrollIntoView({behavior:'smooth', block:'center'}); return; }
           if (!feedback.message) { messageTextarea.focus(); messageTextarea.scrollIntoView({behavior:'smooth', block:'center'}); return; }
@@ -676,7 +681,6 @@ Form URL: feedback.altitudepark.info?location=${currentLocation}
       formData.append('submission_time', new Date().toLocaleString());
       formData.append('form_url', `feedback.altitudepark.info?location=${currentLocation}`);
 
-      // CC fields (for downstream rules)
       if (feedback.ccMe && feedback.email && EMAIL_REGEX.test(feedback.email)) {
         formData.append('cc_me', 'yes');
         formData.append('cc_email', feedback.email);
@@ -731,7 +735,6 @@ Form URL: feedback.altitudepark.info?location=${currentLocation}
       btn?.focus();
     }
 
-    // Init
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', init);
     } else { init(); }
