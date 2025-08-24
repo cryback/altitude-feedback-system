@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Altitude Feedback System</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { margin:0; padding:0; box-sizing:border-box; }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -23,10 +23,7 @@
     .header { text-align: center; margin-bottom: 2rem; }
     .icon-container { display:flex; align-items:center; justify-content:center; margin:0 auto 1rem; font-size:2rem; }
     .logo { height:100px; width:auto; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
-    .logo-placeholder {
-      background: linear-gradient(135deg, #8b5cf6, #06b6d4); color:#fff; padding:15px 25px; border-radius:8px;
-      font-weight:700; font-size:1.5rem; letter-spacing:2px; text-shadow:0 2px 4px rgba(0,0,0,0.3);
-    }
+    .logo-placeholder { background: linear-gradient(135deg,#8b5cf6,#06b6d4); color:#fff; padding:15px 25px; border-radius:8px; font-weight:700; font-size:1.5rem; letter-spacing:2px; text-shadow:0 2px 4px rgba(0,0,0,0.3); }
 
     h1 { font-size:1.5rem; font-weight:700; color:#1f2937; margin-bottom:.5rem; }
     .subtitle { color:#6b7280; font-size:1.1rem; font-weight:600; }
@@ -40,21 +37,19 @@
       border:1px solid #d1d5db; border-radius:.75rem;
       font-size:.875rem; font-family:inherit;
       transition: border-color .2s, box-shadow .2s;
-      min-height:44px; box-sizing:border-box; background:#fff;
+      min-height:44px; background:#fff;
     }
     .form-input:focus, .form-select:focus, .form-textarea:focus {
       outline:none; border-color:#8b5cf6; box-shadow:0 0 0 3px rgba(139,92,246,.1);
     }
     .form-textarea { resize: vertical; min-height: 120px; }
 
-    /* Error + toast */
     .invalid { border-color:#dc2626 !important; box-shadow:0 0 0 3px rgba(220,38,38,.1) !important; }
     .error-text { color:#dc2626; font-size:.8rem; margin-top:.4rem; min-height:1.1em; }
     .toast { margin-top:.75rem; padding:.75rem; border-radius:.5rem; font-size:.875rem; }
     .toast.error { background:#fee2e2; border:1px solid #fecaca; color:#7f1d1d; }
     .hidden { display:none !important; }
 
-    /* Counter */
     .counter-row { display:flex; justify-content:space-between; align-items:center; font-size:.8rem; margin-top:.4rem; color:#6b7280; }
     .counter { font-variant-numeric: tabular-nums; }
     .counter.near-limit { color:#b45309; }
@@ -82,7 +77,8 @@
     .btn-primary {
       width:100%; background: linear-gradient(to right, #8b5cf6, #06b6d4);
       color:#fff; font-weight:600; padding:1rem 1.5rem;
-      border:none; border-radius:.75rem; cursor:pointer; transition: transform .2s, opacity .2s;
+      border:none; border-radius:.75rem; cursor:pointer;
+      transition: transform .2s, opacity .2s;
       display:flex; align-items:center; justify-content:center; gap:.5rem; font-size:1rem;
     }
     .btn-primary:hover:not(:disabled) { transform: translateY(-1px); }
@@ -102,6 +98,7 @@
       width:5rem; height:5rem; background:#dcfce7; border-radius:50%;
       display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem; font-size:2.5rem; color:#16a34a;
     }
+    .actions { display:grid; gap:.75rem; margin-top:.5rem; }
 
     .loading { display:flex; align-items:center; gap:.5rem; }
     .spinner { width:1rem; height:1rem; border:2px solid #fff; border-top:2px solid transparent; border-radius:50%; animation:spin 1s linear infinite; }
@@ -129,6 +126,9 @@
       .card { padding:1.5rem; margin:.5rem; }
     }
   </style>
+
+  <!-- Small perf win -->
+  <link rel="preconnect" href="https://formspree.io" crossorigin>
 </head>
 <body>
   <div id="app">
@@ -152,6 +152,7 @@
         <h1>Altitude Feedback</h1>
         <p class="subtitle">Select your location to get started</p>
       </div>
+
       <div class="location-grid">
         <button class="location-option" data-location="appleton">Altitude Appleton</button>
         <button class="location-option" data-location="gastonia">Altitude Gastonia</button>
@@ -164,6 +165,43 @@
   </div>
 
   <script>
+    /* ====== CONFIG (fill-ins added) ====== */
+
+    // Google Review links (your real URLs)
+    const reviewLinks = {
+      appleton: 'https://g.page/r/Cb0Qd3XgBKqqEAI/review',
+      gastonia: 'https://g.page/r/CaPYc9gsrambEAI/review',
+      lombard:  'https://g.page/r/CSYl9_u7XYnaEAI/review',
+      pueblo:   'https://g.page/r/CfNX2hLOIfJOEAI/review',
+      sanjose:  'https://g.page/r/CVzjCxRlVPcrEAI/review',
+      york:     'https://g.page/r/CR_Q-hmB2Q9MEAI/review'
+    };
+
+    // ===== Telegram (direct) — quick setup for testing =====
+    // NOTE: Your token is in the page while testing. Rotate it later and move to a relay if desired.
+    const TELEGRAM_BOT_TOKEN = '8101432839:AAHSh8kfeyUHdEAxRu770wNxOvdEM4STn0Y';
+
+    // Leave relays blank for now (you can add Worker URLs later)
+    const telegramRelayByPark = {
+      appleton: '',
+      gastonia: '',
+      lombard:  '',
+      pueblo:   '',
+      sanjose:  '',
+      york:     ''
+    };
+
+    // Negative chat_ids per park
+    const telegramDirectByPark = {
+      appleton: { chatId: '-4975975505' },
+      gastonia: { chatId: '-4910641948' },
+      lombard:  { chatId: '-4927929427' },
+      pueblo:   { chatId: '-4617074805' },
+      sanjose:  { chatId: '-4766327355' },
+      york:     { chatId: '-4889975258' }
+    };
+
+    /* ====== APP ====== */
     const MESSAGE_MAX = 1000;
     const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
     const LS_KEY_LEGIT = 'altitudeFeedback';
@@ -201,73 +239,58 @@
     let currentLocation = '';
     let feedback = {
       type:'', rating:0, message:'', name:'', email:'', phone:'',
-      visitDate: new Date().toISOString().split('T')[0], area:''
+      visitDate:new Date().toISOString().split('T')[0], area:''
     };
 
     const qsAdmin = () => new URL(window.location.href).searchParams.get('admin') === '1';
 
-    function refreshAdminCounts() {
+    function refreshAdminCounts(){
       const legit = JSON.parse(localStorage.getItem(LS_KEY_LEGIT) || '[]');
       const bots  = JSON.parse(localStorage.getItem(LS_KEY_BOTS)  || '[]');
       document.getElementById('count-legit').textContent = `Legit: ${legit.length}`;
       document.getElementById('count-bot').textContent  = `Bots: ${bots.length}`;
     }
 
-    function toCSV(arr) {
-      if (!arr || arr.length === 0) return 'data:text/csv;charset=utf-8,';
+    function toCSV(arr){
+      if(!arr || arr.length===0) return 'data:text/csv;charset=utf-8,';
       const keys = Array.from(arr.reduce((s,o)=>{Object.keys(o||{}).forEach(k=>s.add(k));return s;}, new Set())).sort();
-      const esc = v => `"${String(v??'').replace(/\r?\n/g,' ').replace(/"/g,'""')}"`;
-      const header = keys.map(esc).join(',');
-      const rows   = arr.map(o => keys.map(k => esc(o[k])).join(','));
-      return 'data:text/csv;charset=utf-8,' + encodeURIComponent([header,...rows].join('\n'));
+      const esc=v=>`"${String(v??'').replace(/\r?\n/g,' ').replace(/"/g,'""')}"`;
+      const header = keys.map(esc).join(','); const rows = arr.map(o=>keys.map(k=>esc(o[k])).join(','));
+      return 'data:text/csv;charset=utf-8,'+encodeURIComponent([header,...rows].join('\n'));
     }
-    function downloadCSV(items, filename) {
-      const a = document.createElement('a'); a.href = toCSV(items); a.download = filename; document.body.appendChild(a); a.click(); a.remove();
-    }
+    function downloadCSV(items, filename){ const a=document.createElement('a'); a.href=toCSV(items); a.download=filename; document.body.appendChild(a); a.click(); a.remove(); }
 
-    function initAdminPanel() {
+    function initAdminPanel(){
       const admin = document.getElementById('admin-panel');
-      if (!admin) return;
-      if (qsAdmin()) {
-        admin.classList.add('show');
-        refreshAdminCounts();
-        document.getElementById('dl-legit')?.addEventListener('click', () => {
-          const legit = JSON.parse(localStorage.getItem(LS_KEY_LEGIT) || '[]');
-          downloadCSV(legit, `altitude_legit_${new Date().toISOString().slice(0,10)}.csv`);
-        });
-        document.getElementById('dl-bots')?.addEventListener('click', () => {
-          const bots = JSON.parse(localStorage.getItem(LS_KEY_BOTS) || '[]');
-          downloadCSV(bots, `altitude_bots_${new Date().toISOString().slice(0,10)}.csv`);
-        });
-        document.getElementById('clear-legit')?.addEventListener('click', () => {
-          if (confirm('Clear all locally stored legit submissions?')) { localStorage.removeItem(LS_KEY_LEGIT); refreshAdminCounts(); }
-        });
-        document.getElementById('clear-bots')?.addEventListener('click', () => {
-          if (confirm('Clear all locally stored bot submissions?')) { localStorage.removeItem(LS_KEY_BOTS); refreshAdminCounts(); }
-        });
+      if(!admin) return;
+      if(qsAdmin()){
+        admin.classList.add('show'); refreshAdminCounts();
+        document.getElementById('dl-legit')?.addEventListener('click',()=>{ const d=JSON.parse(localStorage.getItem(LS_KEY_LEGIT)||'[]'); downloadCSV(d,`altitude_legit_${new Date().toISOString().slice(0,10)}.csv`); });
+        document.getElementById('dl-bots') ?.addEventListener('click',()=>{ const d=JSON.parse(localStorage.getItem(LS_KEY_BOTS)||'[]');  downloadCSV(d,`altitude_bots_${new Date().toISOString().slice(0,10)}.csv`);  });
+        document.getElementById('clear-legit')?.addEventListener('click',()=>{ if(confirm('Clear legit submissions?')){ localStorage.removeItem(LS_KEY_LEGIT); refreshAdminCounts(); }});
+        document.getElementById('clear-bots') ?.addEventListener('click',()=>{ if(confirm('Clear bot submissions?')){   localStorage.removeItem(LS_KEY_BOTS);  refreshAdminCounts(); }});
       } else admin.classList.remove('show');
     }
 
-    function init() {
+    function init(){
       initAdminPanel();
-      const urlParams = new URLSearchParams(window.location.search);
-      const loc = urlParams.get('location');
-      if (loc && locations[loc]) { currentLocation = loc; renderFeedbackForm(); }
+      const loc = new URLSearchParams(window.location.search).get('location');
+      if(loc && locations[loc]){ currentLocation = loc; renderFeedbackForm(); }
       else setupLocationButtons();
     }
 
-    function setupLocationButtons() {
-      document.querySelectorAll('.location-option').forEach(btn => {
-        btn.addEventListener('click', (e) => { e.preventDefault(); selectLocation(btn.getAttribute('data-location')); });
+    function setupLocationButtons(){
+      document.querySelectorAll('.location-option').forEach(btn=>{
+        btn.addEventListener('click',e=>{ e.preventDefault(); selectLocation(btn.getAttribute('data-location')); });
       });
     }
-    function selectLocation(location) { currentLocation = location; renderFeedbackForm(); }
+    function selectLocation(location){ currentLocation = location; renderFeedbackForm(); }
 
-    function renderFeedbackForm() {
+    function renderFeedbackForm(){
       const app = document.getElementById('app');
       app.innerHTML = `
         <div class="card" id="form-card">
-          <div id="admin-panel" class="admin ${qsAdmin() ? 'show' : ''}">
+          <div id="admin-panel" class="admin ${qsAdmin()?'show':''}">
             <h2>Admin</h2>
             <div class="row" style="margin-bottom:.5rem;">
               <span class="tag" id="count-legit">Legit: 0</span>
@@ -276,8 +299,8 @@
             <div class="row">
               <button id="dl-legit">Download Legit CSV</button>
               <button id="dl-bots">Download Bots CSV</button>
-              <button id="clear-legit" title="Clear local legit submissions">Clear Legit</button>
-              <button id="clear-bots" title="Clear local bot submissions">Clear Bots</button>
+              <button id="clear-legit">Clear Legit</button>
+              <button id="clear-bots">Clear Bots</button>
             </div>
           </div>
 
@@ -301,15 +324,15 @@
             <label class="form-label required-dot" for="feedback-type">What would you like to share?</label>
             <select class="form-select" id="feedback-type" required>
               <option value="">Select feedback type...</option>
-              ${feedbackTypes.map(t => `<option value="${t.id}">${t.icon} ${t.label}</option>`).join('')}
+              ${feedbackTypes.map(t=>`<option value="${t.id}">${t.icon} ${t.label}</option>`).join('')}
             </select>
-            <p class="error-text" id="err-feedback-type"></p>
+            <p class="error-text" id="err-feedback-type" role="alert" aria-live="polite"></p>
           </div>
 
           <div class="form-group" aria-labelledby="rating-label">
             <span id="rating-label" class="form-label">Overall Rating</span>
             <div class="star-rating" id="star-rating" role="radiogroup" aria-label="Overall rating from 1 to 5">
-              ${[1,2,3,4,5].map(n => `<button class="star" data-rating="${n}" role="radio" aria-checked="false" title="${n} star${n>1?'s':''}">★</button>`).join('')}
+              ${[1,2,3,4,5].map(n=>`<button class="star" data-rating="${n}" role="radio" aria-checked="false" title="${n} star${n>1?'s':''}">★</button>`).join('')}
             </div>
           </div>
 
@@ -317,29 +340,28 @@
             <label class="form-label required-dot" for="park-area">Which area of the park?</label>
             <select class="form-select" id="park-area" required>
               <option value="">Select an area...</option>
-              ${parkAreas.map(a => `<option value="${a}">${a}</option>`).join('')}
+              ${parkAreas.map(a=>`<option value="${a}">${a}</option>`).join('')}
             </select>
-            <p class="error-text" id="err-park-area"></p>
+            <p class="error-text" id="err-park-area" role="alert" aria-live="polite"></p>
           </div>
 
           <div class="form-group">
             <label class="form-label required-dot" for="feedback-message">Your Message</label>
             <textarea class="form-textarea" id="feedback-message" placeholder="Please share your experience, suggestion, or concern..." maxlength="${MESSAGE_MAX}" required></textarea>
-            <div class="counter-row">
+            <div class="counter-row" aria-live="polite">
               <span>Be as specific as you like (no personal info).</span>
               <span class="counter" id="message-counter">0/${MESSAGE_MAX}</span>
             </div>
-            <p class="error-text" id="err-message"></p>
+            <p class="error-text" id="err-message" role="alert" aria-live="polite"></p>
           </div>
 
-          <!-- Contact -->
           <div class="form-group">
             <h3 style="font-size:1.125rem; font-weight:600; color:#374151; margin-bottom:1rem;">Contact Information (Optional)</h3>
             <div class="contact-grid">
               <input type="text" class="form-input" placeholder="Your Name" id="contact-name" autocomplete="name">
               <div>
-                <input type="email" class="form-input" placeholder="Your Email" id="contact-email" autocomplete="email">
-                <p class="error-text" id="err-email"></p>
+                <input type="email" class="form-input" placeholder="Your Email" id="contact-email" autocomplete="email" aria-invalid="false">
+                <p class="error-text" id="err-email" role="alert" aria-live="polite"></p>
               </div>
             </div>
             <input type="tel" class="form-input" placeholder="Your Phone Number" id="contact-phone" inputmode="tel" style="margin-top:1rem;">
@@ -360,10 +382,8 @@
             </div>
           </div>
 
-          <!-- Inline error placeholder -->
           <div id="inline-error" class="toast error hidden"></div>
-
-          <button class="btn-primary" id="submit-btn" disabled>📤 Submit Feedback</button>
+          <button class="btn-primary" id="submit-btn" disabled aria-live="polite">📤 Submit Feedback</button>
 
           <div class="sms-info">
             📧 <strong>Direct Notification:</strong> Our management team will be notified immediately when you submit your feedback.
@@ -381,157 +401,129 @@
 
       initAdminPanel();
 
-      // Honeypot (dynamic)
+      // dynamic honeypot
       const hp2 = document.createElement('input');
-      hp2.type = 'text'; hp2.id = 'hp2'; hp2.name = 'hp2'; hp2.autocomplete = 'off'; hp2.tabIndex = -1; hp2.className = 'hp-field';
+      hp2.type='text'; hp2.id='hp2'; hp2.name='hp2'; hp2.autocomplete='off'; hp2.tabIndex=-1; hp2.className='hp-field';
       document.getElementById('form-card')?.appendChild(hp2);
     }
 
-    function setupFormEventListeners() {
-      const feedbackSelect  = document.getElementById('feedback-type');
-      const parkAreaSelect  = document.getElementById('park-area');
-      const messageTextarea = document.getElementById('feedback-message');
-      const nameInput       = document.getElementById('contact-name');
-      const emailInput      = document.getElementById('contact-email');
-      const phoneInput      = document.getElementById('contact-phone');
-      const dateInput       = document.getElementById('visit-date');
-      const openDateBtn     = document.getElementById('open-date');
-      const counter         = document.getElementById('message-counter');
+    function setupFormEventListeners(){
+      const feedbackSelect=document.getElementById('feedback-type');
+      const parkAreaSelect=document.getElementById('park-area');
+      const messageTextarea=document.getElementById('feedback-message');
+      const nameInput=document.getElementById('contact-name');
+      const emailInput=document.getElementById('contact-email');
+      const phoneInput=document.getElementById('contact-phone');
+      const dateInput=document.getElementById('visit-date');
+      const openDateBtn=document.getElementById('open-date');
+      const counter=document.getElementById('message-counter');
 
-      const errors = {
-        type:    document.getElementById('err-feedback-type'),
-        area:    document.getElementById('err-park-area'),
-        message: document.getElementById('err-message'),
-        email:   document.getElementById('err-email')
-      };
+      const errors={ type:document.getElementById('err-feedback-type'), area:document.getElementById('err-park-area'), message:document.getElementById('err-message'), email:document.getElementById('err-email') };
 
-      const setInvalid   = (el, elErr, msg) => { el?.classList.add('invalid'); if (elErr) elErr.textContent = msg||''; };
-      const clearInvalid = (el, elErr)      => { el?.classList.remove('invalid'); if (elErr) elErr.textContent = ''; };
+      const setInvalid=(el,err,msg)=>{ el?.classList.add('invalid'); el?.setAttribute?.('aria-invalid','true'); if(err) err.textContent=msg||''; };
+      const clearInvalid=(el,err)=>{ el?.classList.remove('invalid'); el?.setAttribute?.('aria-invalid','false'); if(err) err.textContent=''; };
 
-      const validateType    = () => { if (!feedback.type)    { setInvalid(feedbackSelect, errors.type, 'Please choose a feedback type.'); return false; } clearInvalid(feedbackSelect, errors.type); return true; };
-      const validateArea    = () => { if (!feedback.area)    { setInvalid(parkAreaSelect, errors.area, 'Please select a park area.'); return false; }   clearInvalid(parkAreaSelect, errors.area); return true; };
-      const validateMessage = () => { if (!feedback.message) { setInvalid(messageTextarea, errors.message, 'Please enter your message.'); return false; } clearInvalid(messageTextarea, errors.message); return true; };
-      const validateEmailIfNeeded = () => {
-        const needs = emailInput.value.trim().length > 0;
-        if (!needs) { clearInvalid(emailInput, errors.email); return true; }
-        if (!EMAIL_REGEX.test(emailInput.value.trim())) { setInvalid(emailInput, errors.email, 'Please enter a valid email address.'); return false; }
-        clearInvalid(emailInput, errors.email); return true;
-      };
+      const validateType   =()=>{ if(!feedback.type){ setInvalid(feedbackSelect,errors.type,'Please choose a feedback type.'); return false;} clearInvalid(feedbackSelect,errors.type); return true; };
+      const validateArea   =()=>{ if(!feedback.area){ setInvalid(parkAreaSelect,errors.area,'Please select a park area.'); return false;} clearInvalid(parkAreaSelect,errors.area); return true; };
+      const validateMessage=()=>{ if(!feedback.message){ setInvalid(messageTextarea,errors.message,'Please enter your message.'); return false;} clearInvalid(messageTextarea,errors.message); return true; };
+      const validateEmailIfNeeded=()=>{ const needs=emailInput.value.trim().length>0; if(!needs){ clearInvalid(emailInput,errors.email); return true;} if(!EMAIL_REGEX.test(emailInput.value.trim())){ setInvalid(emailInput,errors.email,'Please enter a valid email address.'); return false;} clearInvalid(emailInput,errors.email); return true; };
 
-      feedbackSelect?.addEventListener('change', function(){ feedback.type = this.value; validateType(); updateSubmitButton(); });
-      feedbackSelect?.addEventListener('blur', validateType);
+      feedbackSelect?.addEventListener('change',function(){ feedback.type=this.value; validateType(); updateSubmitButton(); });
+      feedbackSelect?.addEventListener('blur',validateType);
 
-      const stars = document.querySelectorAll('.star');
-      stars.forEach(btn => {
-        btn.addEventListener('click', (e) => { e.preventDefault(); setRating(parseInt(btn.dataset.rating,10)); });
-        btn.addEventListener('keydown', (e) => {
-          const key = e.key;
-          if (key==='ArrowRight'||key==='ArrowUp'){ e.preventDefault(); setRating(Math.min(5,(feedback.rating||0)+1)); }
-          else if (key==='ArrowLeft'||key==='ArrowDown'){ e.preventDefault(); setRating(Math.max(1,(feedback.rating||1)-1)); }
-          else if (key===' '||key==='Enter'){ e.preventDefault(); setRating(parseInt(btn.dataset.rating,10)); }
+      document.querySelectorAll('.star').forEach(btn=>{
+        btn.addEventListener('click',e=>{ e.preventDefault(); setRating(parseInt(btn.dataset.rating,10)); });
+        btn.addEventListener('keydown',e=>{
+          const k=e.key;
+          if(k==='ArrowRight'||k==='ArrowUp'){ e.preventDefault(); setRating(Math.min(5,(feedback.rating||0)+1)); }
+          else if(k==='ArrowLeft'||k==='ArrowDown'){ e.preventDefault(); setRating(Math.max(1,(feedback.rating||1)-1)); }
+          else if(k===' '||k==='Enter'){ e.preventDefault(); setRating(parseInt(btn.dataset.rating,10)); }
         });
       });
 
-      parkAreaSelect?.addEventListener('change', function(){ feedback.area = this.value; validateArea(); updateSubmitButton(); });
-      parkAreaSelect?.addEventListener('blur', validateArea);
+      parkAreaSelect?.addEventListener('change',function(){ feedback.area=this.value; validateArea(); updateSubmitButton(); });
+      parkAreaSelect?.addEventListener('blur',validateArea);
 
-      const updateCounter = () => {
-        if (messageTextarea.value.length > MESSAGE_MAX) messageTextarea.value = messageTextarea.value.slice(0, MESSAGE_MAX);
-        const len = messageTextarea.value.length;
-        feedback.message = messageTextarea.value.trim();
-        counter.textContent = `${len}/${MESSAGE_MAX}`;
-        counter.classList.toggle('near-limit', len >= MESSAGE_MAX*0.85 && len < MESSAGE_MAX);
-        counter.classList.toggle('at-limit',  len >= MESSAGE_MAX);
+      const updateCounter=()=>{
+        if(messageTextarea.value.length>MESSAGE_MAX) messageTextarea.value=messageTextarea.value.slice(0,MESSAGE_MAX);
+        const len=messageTextarea.value.length;
+        feedback.message=messageTextarea.value.trim();
+        counter.textContent=`${len}/${MESSAGE_MAX}`;
+        counter.classList.toggle('near-limit',len>=MESSAGE_MAX*0.85 && len<MESSAGE_MAX);
+        counter.classList.toggle('at-limit',len>=MESSAGE_MAX);
         validateMessage(); updateSubmitButton();
       };
-      messageTextarea?.addEventListener('input', updateCounter);
-      messageTextarea?.addEventListener('paste', ()=>setTimeout(updateCounter,0));
-      messageTextarea?.addEventListener('blur',  validateMessage);
+      messageTextarea?.addEventListener('input',updateCounter);
+      messageTextarea?.addEventListener('paste',()=>setTimeout(updateCounter,0));
+      messageTextarea?.addEventListener('blur',validateMessage);
       updateCounter();
 
-      nameInput?.addEventListener('input', function(){ feedback.name  = this.value; });
-      emailInput?.addEventListener('input',function(){ feedback.email = this.value.trim(); validateEmailIfNeeded(); });
-      phoneInput?.addEventListener('input',function(){ feedback.phone = this.value; });
+      nameInput?.addEventListener('input',function(){ feedback.name=this.value; });
+      emailInput?.addEventListener('input',function(){ feedback.email=this.value.trim(); validateEmailIfNeeded(); });
+      phoneInput?.addEventListener('input',function(){ feedback.phone=this.value; });
 
-      dateInput?.addEventListener('change', function(){ feedback.visitDate = this.value; });
-      openDateBtn?.addEventListener('click', () => { if (dateInput?.showPicker) dateInput.showPicker(); else dateInput?.focus(); });
+      dateInput?.addEventListener('change',function(){ feedback.visitDate=this.value; });
+      openDateBtn?.addEventListener('click',()=>{ if(dateInput?.showPicker) dateInput.showPicker(); else dateInput?.focus(); });
 
-      const submitBtn = document.getElementById('submit-btn');
-      submitBtn?.addEventListener('click', (e) => {
+      const submitBtn=document.getElementById('submit-btn');
+      submitBtn?.addEventListener('click',e=>{
         e.preventDefault();
-
-        // Honeypot
-        const hp1 = document.getElementById('hp1');
-        const hp2 = document.getElementById('hp2');
-        const botTripped =
-          (hp1 && hp1.value && hp1.value.trim() !== '') ||
-          (hp2 && hp2.value && hp2.value.trim() !== '');
-        if (botTripped) {
-          const botSubmission = { ...feedback, location: currentLocation, timestamp: new Date().toISOString(), bot:true };
-          try { const bots = JSON.parse(localStorage.getItem(LS_KEY_BOTS) || '[]'); bots.push(botSubmission); localStorage.setItem(LS_KEY_BOTS, JSON.stringify(bots)); } catch(e){}
+        const hp1=document.getElementById('hp1'); const hp2=document.getElementById('hp2');
+        const botTripped=(hp1&&hp1.value.trim()!=='')||(hp2&&hp2.value.trim()!=='');
+        if(botTripped){
+          const botSubmission={...feedback,location:currentLocation,timestamp:new Date().toISOString(),bot:true};
+          try{ const bots=JSON.parse(localStorage.getItem(LS_KEY_BOTS)||'[]'); bots.push(botSubmission); localStorage.setItem(LS_KEY_BOTS,JSON.stringify(bots)); }catch{}
           renderSuccessPage(); refreshAdminCounts(); return;
         }
-
-        const ok = validateType() & validateArea() & validateMessage() & validateEmailIfNeeded();
-        if (!ok) {
-          const first = !feedback.type ? feedbackSelect : !feedback.area ? parkAreaSelect : !feedback.message ? messageTextarea : emailInput;
-          first.focus(); first.scrollIntoView({behavior:'smooth', block:'center'});
-          return;
+        const ok=validateType() & validateArea() & validateMessage() & validateEmailIfNeeded();
+        if(!ok){
+          const first=!feedback.type?feedbackSelect:!feedback.area?parkAreaSelect:!feedback.message?messageTextarea:emailInput;
+          first.focus(); first.scrollIntoView({behavior:'smooth',block:'center'}); return;
         }
-
         handleSubmit();
       });
     }
 
-    function setRating(n) {
-      feedback.rating = n;
-      document.querySelectorAll('.star').forEach((s,i)=>{ const active = i < n; s.classList.toggle('active', active); s.setAttribute('aria-checked', active && i===n-1 ? 'true':'false'); });
+    function setRating(n){
+      feedback.rating=n;
+      document.querySelectorAll('.star').forEach((s,i)=>{ const a=i<n; s.classList.toggle('active',a); s.setAttribute('aria-checked',a && i===n-1?'true':'false'); });
       updateSubmitButton();
     }
 
-    function updateSubmitButton() {
-      const submitBtn = document.getElementById('submit-btn');
-      if (!submitBtn) return;
-      const isValid = Boolean(feedback.type && feedback.message && feedback.area);
-      submitBtn.disabled = !isValid;
+    function updateSubmitButton(){
+      const btn=document.getElementById('submit-btn');
+      if(!btn) return;
+      btn.disabled=!Boolean(feedback.type && feedback.message && feedback.area);
     }
 
-    function showInlineError(msg) {
-      const el = document.getElementById('inline-error');
-      if (!el) return;
-      el.textContent = msg;
-      el.classList.remove('hidden');
-    }
+    function showInlineError(msg){ const el=document.getElementById('inline-error'); if(!el) return; el.textContent=msg; el.classList.remove('hidden'); }
 
-    async function handleSubmit() {
-      const submitBtn = document.getElementById('submit-btn');
+    async function handleSubmit(){
+      const submitBtn=document.getElementById('submit-btn');
       document.getElementById('inline-error')?.classList.add('hidden');
-      submitBtn.innerHTML = `<span class="loading"><span class="spinner"></span>Sending...</span>`;
-      submitBtn.disabled = true;
+      submitBtn.innerHTML=`<span class="loading"><span class="spinner"></span>Sending...</span>`;
+      submitBtn.disabled=true;
 
-      try {
+      try{
         storeLocalBackup();
-        const res = await submitToFormspree(); // never throws on network-only issues
+        await submitToFormspree();
+        // Fire-and-forget Telegram (does not block success screen)
+        notifyTelegram({ ...feedback, location: currentLocation }).catch(e=>console.warn('telegram failed', e));
         renderSuccessPage();
         refreshAdminCounts();
-      } catch (err) {
-        console.error('Submission error:', err);
+      }catch(err){
+        console.error('Submission error:',err);
         showInlineError('We couldn’t send your feedback. Please try again.');
-        submitBtn.innerHTML = '📤 Submit Feedback';
+        submitBtn.innerHTML='📤 Submit Feedback';
         updateSubmitButton();
       }
     }
 
-    /* Robust Formspree handler:
-       - Try normal CORS
-       - If it throws (Safari/Brave privacy), retry with no-cors and treat as success
-       - Only throw on definite 4xx/5xx errors
-    */
-    async function submitToFormspree() {
-      const formData = new FormData();
-
-      const emailSubject = `🏀 NEW FEEDBACK - ${locations[currentLocation]} - ${feedbackTypeMapping[feedback.type]}`;
-      const organizedMessage = `
+    /* Robust Formspree handler with no-cors fallback */
+    async function submitToFormspree(){
+      const formData=new FormData();
+      const subject=`🏀 NEW FEEDBACK - ${locations[currentLocation]} - ${feedbackTypeMapping[feedback.type]}`;
+      const organizedMessage=`
 FEEDBACK SUBMISSION - ${locations[currentLocation]}
 
 ⭐ Rating: ${feedback.rating || 'Not rated'}/5 stars
@@ -554,105 +546,132 @@ Location: ${locations[currentLocation]}
 Form URL: feedback.altitudepark.info?location=${currentLocation}
       `.trim();
 
-      // Fixed reply-to so replies don’t go to the guest
-      formData.append('_replyto', 'noreply@altitudepark.info');
-      formData.append('_subject', emailSubject);
-      formData.append('location', locations[currentLocation]);
-      formData.append('feedback_type', feedbackTypeMapping[feedback.type]);
-      formData.append('rating', feedback.rating || 'Not rated');
-      formData.append('park_area', feedback.area);
-      formData.append('customer_name', feedback.name || 'Not provided');
-      formData.append('customer_email', feedback.email || 'Not provided');
-      formData.append('customer_phone', feedback.phone || 'Not provided');
-      formData.append('visit_date', feedback.visitDate || 'Not specified');
-      formData.append('customer_message', feedback.message);
-      formData.append('organized_feedback', organizedMessage);
-      formData.append('submission_time', new Date().toLocaleString());
-      formData.append('form_url', `feedback.altitudepark.info?location=${currentLocation}`);
+      formData.append('_replyto','noreply@altitudepark.info');
+      formData.append('_subject',subject);
+      formData.append('location',locations[currentLocation]);
+      formData.append('feedback_type',feedbackTypeMapping[feedback.type]);
+      formData.append('rating',feedback.rating || 'Not rated');
+      formData.append('park_area',feedback.area);
+      formData.append('customer_name',feedback.name || 'Not provided');
+      formData.append('customer_email',feedback.email || 'Not provided');
+      formData.append('customer_phone',feedback.phone || 'Not provided');
+      formData.append('visit_date',feedback.visitDate || 'Not specified');
+      formData.append('customer_message',feedback.message);
+      formData.append('organized_feedback',organizedMessage);
+      formData.append('submission_time',new Date().toLocaleString());
+      formData.append('form_url',`feedback.altitudepark.info?location=${currentLocation}`);
 
-      const url = 'https://formspree.io/f/mrbazzjn';
+      const url='https://formspree.io/f/mrbazzjn';
+      const okish=r=>r.ok || (r.status>=200 && r.status<400) || r.type==='opaque' || r.status===0;
 
-      // Helper to evaluate a response as success
-      const okish = (r) => r.ok || (r.status >= 200 && r.status < 400) || r.type === 'opaque' || r.status === 0;
-
-      // First try: CORS
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          body: formData,
-          headers: { 'Accept': 'application/json' },
-          mode: 'cors',
-          redirect: 'follow',
-          cache: 'no-cache',
-          credentials: 'omit',
-          keepalive: true,
-          referrerPolicy: 'no-referrer'
-        });
-
-        const ct = response.headers.get('content-type') || '';
-        if (okish(response)) {
-          if (ct.includes('application/json')) {
-            try { await response.json(); } catch {}
-          }
-          return { ok: true };
-        }
-
-        // Definite failure (4xx/5xx)
-        const text = ct.includes('application/json') ? JSON.stringify(await response.json()).slice(0,500) : await response.text();
-        throw new Error(`Formspree error ${response.status}: ${text}`);
-      } catch (e) {
-        // Network/privacy error: retry with no-cors and treat as success
-        console.warn('CORS fetch failed, retrying with no-cors...', e);
-        const fallback = await fetch(url, {
-          method: 'POST',
-          body: formData,
-          mode: 'no-cors',
-          cache: 'no-cache',
-          credentials: 'omit',
-          keepalive: true,
-          referrerPolicy: 'no-referrer'
-        });
-        // no-cors returns opaque; consider success if no exception thrown
-        return { ok: true, via: 'no-cors' };
+      try{
+        const r=await fetch(url,{ method:'POST', body:formData, headers:{'Accept':'application/json'}, mode:'cors', redirect:'follow', cache:'no-cache', credentials:'omit', keepalive:true, referrerPolicy:'no-referrer' });
+        const ct=r.headers.get('content-type')||'';
+        if(okish(r)){ if(ct.includes('application/json')){ try{ await r.json(); }catch{} } return {ok:true}; }
+        const text=ct.includes('application/json')?JSON.stringify(await r.json()).slice(0,500):await r.text();
+        throw new Error(`Formspree error ${r.status}: ${text}`);
+      }catch(e){
+        await fetch(url,{ method:'POST', body:formData, mode:'no-cors', cache:'no-cache', credentials:'omit', keepalive:true, referrerPolicy:'no-referrer' });
+        return {ok:true, via:'no-cors'};
       }
     }
 
-    function storeLocalBackup() {
-      const submission = { ...feedback, location: currentLocation, timestamp: new Date().toISOString() };
-      try {
-        const submissions = JSON.parse(localStorage.getItem(LS_KEY_LEGIT) || '[]');
-        submissions.push(submission);
-        localStorage.setItem(LS_KEY_LEGIT, JSON.stringify(submissions));
-      } catch (e) { console.error('Local storage error:', e); }
+    // --- Telegram notify: relay first (if provided), else DIRECT (GET + no-cors) ---
+    async function notifyTelegram(payload){
+      try{
+        const park = payload.location;
+        const text = formatTelegramMessage(payload);
+
+        // Try relay if configured later
+        const relay = telegramRelayByPark[park];
+        if (relay) {
+          try {
+            await fetch(relay, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ text }),
+              mode: 'cors',
+              keepalive: true
+            });
+            return;
+          } catch (e) {
+            console.warn('Relay failed, sending direct', e);
+          }
+        }
+
+        // DIRECT mode (testing): GET + no-cors so the browser happily sends it
+        const cfg = telegramDirectByPark[park];
+        if (!cfg?.chatId || !TELEGRAM_BOT_TOKEN) return;
+
+        const url = new URL(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`);
+        url.searchParams.set('chat_id', cfg.chatId);
+        url.searchParams.set('text', text);
+        url.searchParams.set('parse_mode', 'HTML');
+        url.searchParams.set('disable_web_page_preview', '1');
+
+        await fetch(url.toString(), { method:'GET', mode:'no-cors', keepalive:true });
+      }catch(err){
+        console.warn('notifyTelegram error (non-blocking):', err);
+      }
     }
 
-    function renderSuccessPage() {
-      const app = document.getElementById('app');
+    function formatTelegramMessage(p){
+      const loc = locations[p.location] || p.location;
+      return [
+        '🆕 <b>New Feedback</b>',
+        `🏢 <b>Location:</b> ${loc}`,
+        `🏷️ <b>Type:</b> ${feedbackTypeMapping[p.type] || p.type}`,
+        `⭐ <b>Rating:</b> ${p.rating || 'Not rated'}`,
+        `📍 <b>Area:</b> ${p.area || '-'}`,
+        `📅 <b>Visit:</b> ${p.visitDate || '-'}`,
+        '',
+        `<b>Message:</b>`,
+        (p.message || '').slice(0, 1500),
+        '',
+        `<b>Customer</b>`,
+        `• Name: ${p.name || '-'}`,
+        `• Email: ${p.email || '-'}`,
+        `• Phone: ${p.phone || '-'}`,
+        '',
+        `⏰ ${new Date().toLocaleString()}`
+      ].join('\n');
+    }
+
+    function storeLocalBackup(){
+      const submission={...feedback,location:currentLocation,timestamp:new Date().toISOString()};
+      try{ const submissions=JSON.parse(localStorage.getItem(LS_KEY_LEGIT)||'[]'); submissions.push(submission); localStorage.setItem(LS_KEY_LEGIT,JSON.stringify(submissions)); }catch(e){ console.error('Local storage error:',e); }
+    }
+
+    function renderSuccessPage(){
+      const app=document.getElementById('app');
+      const reviewUrl = reviewLinks[currentLocation] || '';
+      const showReview = Number(feedback.rating || 0) >= 4 && reviewUrl;
+
       app.innerHTML = `
         <div class="card">
           <div class="success-container">
             <div class="success-icon">✅</div>
             <h1 style="font-size:1.5rem; margin-bottom:1rem;">Thank You!</h1>
-            <p style="color:#6b7280; margin-bottom:1.5rem;">
-              Your feedback has been successfully submitted for ${locations[currentLocation]}. We appreciate you taking the time to share your experience with us.
+            <p style="color:#6b7280; margin-bottom:1rem;">
+              Your feedback has been successfully submitted for ${locations[currentLocation]}.
             </p>
-            <div style="font-size:.95rem; color:#6b7280; margin-bottom:1.5rem;">
-              We'll respond to urgent matters as soon as possible.
+            <div class="actions">
+              ${ showReview ? `<a class="btn-primary" href="${reviewUrl}" target="_blank" rel="noopener noreferrer nofollow">⭐ Leave a Google Review</a>` : '' }
+              <button class="btn-primary" id="submit-another">Submit Another</button>
             </div>
-            <button class="btn-primary" id="submit-another" style="max-width:220px; margin:0 auto;">Submit Another</button>
           </div>
         </div>
       `;
-      const btn = document.getElementById('submit-another');
-      btn?.addEventListener('click', () => {
-        feedback = { type:'', rating:0, message:'', name:'', email:'', phone:'', visitDate: new Date().toISOString().split('T')[0], area:'' };
+      const btn=document.getElementById('submit-another');
+      btn?.addEventListener('click',()=>{
+        feedback={ type:'', rating:0, message:'', name:'', email:'', phone:'', visitDate:new Date().toISOString().split('T')[0], area:'' };
         renderFeedbackForm();
         document.querySelector('#feedback-message')?.focus();
       });
       btn?.focus();
     }
 
-    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
+    if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); } else { init(); }
   </script>
 </body>
 </html>
