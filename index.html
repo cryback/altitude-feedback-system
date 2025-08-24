@@ -63,6 +63,9 @@
 
     .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
 
+    /* Contact section stacked full-width */
+    .contact-grid { display:grid; grid-template-columns:1fr; gap:1rem; }
+
     /* ---------- DATE WIDTH FIX (iOS/Chrome mobile) ---------- */
     input[type="date"].form-input {
       width: 100% !important;
@@ -74,18 +77,17 @@
     }
     .date-wrapper {
       position: relative;
-      display: flex;            /* allows the input to flex-shrink properly */
+      display: flex;
       width: 100%;
     }
     .date-wrapper .form-input[type="date"] {
       flex: 1 1 auto;
-      min-width: 0;             /* critical so it won’t overflow */
+      min-width: 0;
       max-width: 100%;
       padding-right: 2.75rem;   /* space for the calendar button */
       appearance: auto; -webkit-appearance: auto; -moz-appearance: auto;
       line-height: normal;
     }
-    /* Hide native calendar icon so our button is the visible one */
     .date-wrapper .form-input[type="date"]::-webkit-calendar-picker-indicator {
       opacity: 0; pointer-events: none;
     }
@@ -140,7 +142,7 @@
       padding:1rem; margin:1rem 0; font-size:.875rem; color:#0c4a6e;
     }
 
-    /* Honeypot: visually hidden but present in DOM; ignored by AT */
+    /* Honeypot */
     .hp-field {
       position:absolute !important;
       left:-10000px !important;
@@ -244,8 +246,7 @@
     let currentLocation = '';
     let feedback = {
       type:'', rating:0, message:'', name:'', email:'', phone:'',
-      visitDate: new Date().toISOString().split('T')[0], area:'',
-      ccMe:false
+      visitDate: new Date().toISOString().split('T')[0], area:''
     };
 
     function qsAdmin() {
@@ -416,18 +417,15 @@
             <p class="error-text" id="err-message"></p>
           </div>
 
+          <!-- CONTACT INFO (stacked: Name, Email, then Phone) -->
           <div class="form-group">
             <h3 style="font-size:1.125rem; font-weight:600; color:#374151; margin-bottom:1rem;">Contact Information (Optional)</h3>
-            <div class="grid-2">
+            <div class="contact-grid">
               <input type="text" class="form-input" placeholder="Your Name" id="contact-name" autocomplete="name">
               <div>
                 <input type="email" class="form-input" placeholder="Your Email" id="contact-email" autocomplete="email">
                 <p class="error-text" id="err-email"></p>
               </div>
-            </div>
-            <div class="inline-row" style="margin-top:.5rem;">
-              <input type="checkbox" id="cc-me" class="checkbox" />
-              <label for="cc-me">Email me a copy of my submission</label>
             </div>
             <input type="tel" class="form-input" placeholder="Your Phone Number" id="contact-phone" inputmode="tel" style="margin-top:1rem;">
           </div>
@@ -484,7 +482,6 @@
       const nameInput = document.getElementById('contact-name');
       const emailInput = document.getElementById('contact-email');
       const phoneInput = document.getElementById('contact-phone');
-      const ccMeInput = document.getElementById('cc-me');
       const dateInput = document.getElementById('visit-date');
       const openDateBtn = document.getElementById('open-date');
       const counter = document.getElementById('message-counter');
@@ -499,11 +496,11 @@
       const setInvalid = (el, elErr, msg) => { el?.classList.add('invalid'); if (elErr) elErr.textContent = msg || ''; };
       const clearInvalid = (el, elErr) => { el?.classList.remove('invalid'); if (elErr) elErr.textContent = ''; };
 
-      const validateType = () => { if (!feedback.type) { setInvalid(feedbackSelect, errors.type, 'Please choose a feedback type.'); return false; } clearInvalid(feedbackSelect, errors.type); return true; };
-      const validateArea = () => { if (!feedback.area) { setInvalid(parkAreaSelect, errors.area, 'Please select a park area.'); return false; } clearInvalid(parkAreaSelect, errors.area); return true; };
-      const validateMessage = () => { if (!feedback.message) { setInvalid(messageTextarea, errors.message, 'Please enter your message.'); return false; } clearInvalid(messageTextarea, errors.message); return true; };
+      const validateType   = () => { if (!feedback.type)    { setInvalid(feedbackSelect, errors.type,   'Please choose a feedback type.'); return false; } clearInvalid(feedbackSelect, errors.type);   return true; };
+      const validateArea   = () => { if (!feedback.area)    { setInvalid(parkAreaSelect, errors.area,   'Please select a park area.');    return false; } clearInvalid(parkAreaSelect, errors.area);   return true; };
+      const validateMessage= () => { if (!feedback.message) { setInvalid(messageTextarea, errors.message,'Please enter your message.');   return false; } clearInvalid(messageTextarea, errors.message);return true; };
       const validateEmailIfNeeded = () => {
-        const needs = feedback.ccMe || emailInput.value.trim().length > 0;
+        const needs = emailInput.value.trim().length > 0; // email optional; validate only if provided
         if (!needs) { clearInvalid(emailInput, errors.email); return true; }
         if (!EMAIL_REGEX.test(emailInput.value.trim())) { setInvalid(emailInput, errors.email, 'Please enter a valid email address.'); return false; }
         clearInvalid(emailInput, errors.email); return true;
@@ -546,12 +543,6 @@
       emailInput?.addEventListener('input', function(){ feedback.email = this.value.trim(); validateEmailIfNeeded(); });
       phoneInput?.addEventListener('input', function(){ feedback.phone = this.value; });
 
-      ccMeInput?.addEventListener('change', function(){
-        feedback.ccMe = this.checked;
-        validateEmailIfNeeded();
-        updateSubmitButton();
-      });
-
       dateInput?.addEventListener('change', function(){ feedback.visitDate = this.value; });
       openDateBtn?.addEventListener('click', () => { if (dateInput?.showPicker) dateInput.showPicker(); else dateInput?.focus(); });
 
@@ -585,17 +576,12 @@
           return;
         }
 
-        const ok =
-          validateType() &
-          validateArea() &
-          validateMessage() &
-          validateEmailIfNeeded();
-
+        const ok = validateType() & validateArea() & validateMessage() & validateEmailIfNeeded();
         if (!ok) {
-          if (!feedback.type) { feedbackSelect.focus(); feedbackSelect.scrollIntoView({behavior:'smooth', block:'center'}); return; }
-          if (!feedback.area) { parkAreaSelect.focus(); parkAreaSelect.scrollIntoView({behavior:'smooth', block:'center'}); return; }
-          if (!feedback.message) { messageTextarea.focus(); messageTextarea.scrollIntoView({behavior:'smooth', block:'center'}); return; }
-          if (feedback.ccMe && !EMAIL_REGEX.test(emailInput.value.trim())) { emailInput.focus(); emailInput.scrollIntoView({behavior:'smooth', block:'center'}); return; }
+          if (!feedback.type)   { feedbackSelect.focus();   feedbackSelect.scrollIntoView({behavior:'smooth', block:'center'}); return; }
+          if (!feedback.area)   { parkAreaSelect.focus();   parkAreaSelect.scrollIntoView({behavior:'smooth', block:'center'}); return; }
+          if (!feedback.message){ messageTextarea.focus();  messageTextarea.scrollIntoView({behavior:'smooth', block:'center'}); return; }
+          if (emailInput.value && !EMAIL_REGEX.test(emailInput.value.trim())) { emailInput.focus(); emailInput.scrollIntoView({behavior:'smooth', block:'center'}); return; }
           return;
         }
 
@@ -617,8 +603,7 @@
     function updateSubmitButton() {
       const submitBtn = document.getElementById('submit-btn');
       if (!submitBtn) return;
-      const emailValidOrNotNeeded = !feedback.ccMe || (feedback.email && EMAIL_REGEX.test(feedback.email));
-      const isValid = Boolean(feedback.type && feedback.message && feedback.area && emailValidOrNotNeeded);
+      const isValid = Boolean(feedback.type && feedback.message && feedback.area);
       submitBtn.disabled = !isValid;
     }
 
@@ -640,8 +625,10 @@
       }
     }
 
+    /* tolerant Formspree handler — _replyto fixed to noreply@ */
     async function submitToFormspree() {
       const formData = new FormData();
+
       const emailSubject = `🏀 NEW FEEDBACK - ${locations[currentLocation]} - ${feedbackTypeMapping[feedback.type]}`;
       const organizedMessage = `
 FEEDBACK SUBMISSION - ${locations[currentLocation]}
@@ -666,7 +653,8 @@ Location: ${locations[currentLocation]}
 Form URL: feedback.altitudepark.info?location=${currentLocation}
       `.trim();
 
-      formData.append('_replyto', feedback.email || 'noreply@altitudepark.info');
+      /* Always use a fixed reply-to so replies don't go to the guest */
+      formData.append('_replyto', 'noreply@altitudepark.info');
       formData.append('_subject', emailSubject);
       formData.append('location', locations[currentLocation]);
       formData.append('feedback_type', feedbackTypeMapping[feedback.type]);
@@ -681,23 +669,38 @@ Form URL: feedback.altitudepark.info?location=${currentLocation}
       formData.append('submission_time', new Date().toLocaleString());
       formData.append('form_url', `feedback.altitudepark.info?location=${currentLocation}`);
 
-      if (feedback.ccMe && feedback.email && EMAIL_REGEX.test(feedback.email)) {
-        formData.append('cc_me', 'yes');
-        formData.append('cc_email', feedback.email);
-      } else {
-        formData.append('cc_me', 'no');
-      }
-
       const response = await fetch('https://formspree.io/f/mrbazzjn', {
-        method: 'POST', body: formData, headers: { 'Accept': 'application/json' }
+        method: 'POST',
+        body: formData,
+        headers: { 'Accept': 'application/json' },
+        mode: 'cors',
+        redirect: 'follow',
+        cache: 'no-cache'
       });
 
-      if (!response.ok) {
-        let err; try { err = await response.json(); } catch {}
-        console.error('Formspree error:', err || response.statusText);
-        throw new Error('Failed to submit feedback');
+      const status = response.status;
+      const ct = response.headers.get('content-type') || '';
+      const looksSuccessful =
+        response.ok || (status >= 200 && status < 400) || response.type === 'opaque' || status === 0;
+
+      if (looksSuccessful) {
+        if (ct.includes('application/json')) {
+          try { return await response.json(); } catch { return { ok: true }; }
+        }
+        return { ok: true };
       }
-      return response.json();
+
+      try {
+        if (ct.includes('application/json')) {
+          const errJson = await response.json();
+          throw new Error('Formspree error: ' + JSON.stringify(errJson));
+        } else {
+          const errText = await response.text();
+          throw new Error(`Formspree error (status ${status}): ${errText}`);
+        }
+      } catch {
+        throw new Error(`Formspree error (status ${status})`);
+      }
     }
 
     function storeLocalBackup() {
@@ -728,7 +731,7 @@ Form URL: feedback.altitudepark.info?location=${currentLocation}
       `;
       const btn = document.getElementById('submit-another');
       btn?.addEventListener('click', () => {
-        feedback = { type:'', rating:0, message:'', name:'', email:'', phone:'', visitDate: new Date().toISOString().split('T')[0], area:'', ccMe:false };
+        feedback = { type:'', rating:0, message:'', name:'', email:'', phone:'', visitDate: new Date().toISOString().split('T')[0], area:'' };
         renderFeedbackForm();
         document.querySelector('#feedback-message')?.focus();
       });
