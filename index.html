@@ -405,7 +405,8 @@
                 <div class="card">
                     <div class="header">
                         <div class="icon-container">
-                            <img src="altitude-logo.png" alt="Altitude Logo" class="logo">
+                            <img src="./altitude-logo.png" alt="Altitude Logo" class="logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <div class="logo-placeholder" style="display: none;">ALTITUDE</div>
                         </div>
                         <h1>Share Your Experience</h1>
                         <p class="subtitle">${locations[currentLocation]}</p>
